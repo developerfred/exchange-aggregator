@@ -8,6 +8,7 @@ import {
   switchMap,
   retryWhen,
   delay,
+  share,
   filter,
   tap,
 } from 'rxjs/operators';
@@ -23,7 +24,6 @@ import {
   RadarCancelOrder,
   RadarRemoveOrder,
   RadarBook,
-  RadarSignedOrder,
 } from '@radarrelay/types';
 import {
   Network,
@@ -35,6 +35,7 @@ import {
   RemoveOrderMessage,
   SnapshotMessage,
   OrderMessage,
+  Order,
 } from '../../types';
 
 const debug = require('debug')('exchange-aggregator:radar-relay');
@@ -46,66 +47,64 @@ interface SubscribeMessage {
 }
 
 const subscribeMessage = (base: string, quote: string) => {
+  const baseToken = cleanToken(base);
+  const quoteToken = cleanToken(quote);
   const message: SubscribeMessage = {
     type: WebsocketRequestType.SUBSCRIBE,
     topic: WebsocketRequestTopic.BOOK,
-    market: `${base}-${quote}`,
+    market: `${baseToken}-${quoteToken}`,
   };
 
   return message;
 };
 
-const standardizeNewOrderEvent = (event: RadarNewOrder) => {
-  return {
-    type: StandardizedMessageType.ADD,
+const standardizeOrder = (order: any): Order => ({
+  price: parseFloat(order.price),
+  volume: parseFloat(order.remainingBaseTokenAmount),
+  metadata: order,
+});
+
+const standardizeNewOrderEvent = (event: RadarNewOrder) =>
+  ({
+    event: StandardizedMessageType.ADD,
     exchange: Exchange.RADAR_RELAY,
+    type: event.order.type,
     id: event.order.orderHash,
-    order: {
-      id: event.order.orderHash,
-      original: event.order,
-    },
-  } as AddOrderMessage;
-};
+    order: standardizeOrder(event.order),
+  } as AddOrderMessage);
 
-const standardizeFillOrderEvent = (event: RadarFillOrder) => {
-  return {
-    type: StandardizedMessageType.FILL,
+const standardizeFillOrderEvent = (event: RadarFillOrder) =>
+  ({
+    event: StandardizedMessageType.FILL,
     exchange: Exchange.RADAR_RELAY,
+    type: event.order.type,
     id: event.order.orderHash,
-    order: {
-      id: event.order.orderHash,
-      original: event.order,
-    },
-  } as FillOrderMessage;
-};
+    order: standardizeOrder(event.order),
+  } as FillOrderMessage);
 
-const standardizeCancelOrderEvent = (event: RadarCancelOrder) => {
-  return {
-    type: StandardizedMessageType.REMOVE,
+const standardizeCancelOrderEvent = (event: RadarCancelOrder) =>
+  ({
+    event: StandardizedMessageType.REMOVE,
     exchange: Exchange.RADAR_RELAY,
+    type: event.orderType,
     id: event.orderHash,
-  } as RemoveOrderMessage;
-};
+  } as RemoveOrderMessage);
 
-const standardizeRemoveOrderEvent = (event: RadarRemoveOrder) => {
-  return {
-    type: StandardizedMessageType.REMOVE,
+const standardizeRemoveOrderEvent = (event: RadarRemoveOrder) =>
+  ({
+    event: StandardizedMessageType.REMOVE,
     exchange: Exchange.RADAR_RELAY,
+    type: event.orderType,
     id: event.orderHash,
-  } as RemoveOrderMessage;
-};
+  } as RemoveOrderMessage);
 
-const standardizeSnapshotEvent = (book: RadarBook) => {
-  return {
-    type: StandardizedMessageType.SNAPSHOT,
+const standardizeSnapshotEvent = (book: RadarBook) =>
+  ({
+    event: StandardizedMessageType.SNAPSHOT,
     exchange: Exchange.RADAR_RELAY,
-    snapshot: [].concat(book.asks, book.bids).map((item: RadarSignedOrder) => ({
-      // TODO: Add other fields.
-      id: item.orderHash,
-      original: item,
-    })),
-  } as SnapshotMessage;
-};
+    asks: book.asks.map(standardizeOrder),
+    bids: book.bids.map(standardizeOrder),
+  } as SnapshotMessage);
 
 export const isSnapshotEvent = R.allPass([R.has('asks'), R.has('bids')]) as (
   payload,
@@ -158,7 +157,7 @@ export const isRemoveOrderEvent = R.allPass([
 const getWebsocketUrl = (network: Network) => {
   switch (network) {
     case Network.KOVAN:
-      return 'wss://ws.radarrelay.com/v2';
+      return 'wss://ws.kovan.radarrelay.com/v2';
     case Network.MAINNET:
       return 'wss://ws.radarrelay.com/v2';
     default:
@@ -166,12 +165,24 @@ const getWebsocketUrl = (network: Network) => {
   }
 };
 
+const cleanToken = (token: string) => {
+  switch (token) {
+    case 'ETH':
+      return 'WETH';
+    default:
+      return token;
+  }
+};
+
 const getHttpUrl = (base: string, quote: string, network: Network) => {
+  const baseToken = cleanToken(base);
+  const quoteToken = cleanToken(quote);
+
   switch (network) {
     case Network.KOVAN:
-      return `https://api.radarrelay.com/v2/markets/${base}-${quote}/book`;
+      return `https://api.kovan.radarrelay.com/v2/markets/${baseToken}-${quoteToken}/book`;
     case Network.MAINNET:
-      return `https://api.radarrelay.com/v2/markets/${base}-${quote}/book`;
+      return `https://api.radarrelay.com/v2/markets/${baseToken}-${quoteToken}/book`;
     default:
       throw new Error('Invalid network.');
   }
@@ -233,14 +244,12 @@ export const getObservableRadarRelayOrders = ({
       const url = getHttpUrl(base, quote, network);
       return Rx.from(axios.get(url).then(result => result.data as RadarBook));
     }),
-    map(data => {
+    tap(data => {
       debug(
         'Receiving snapshot (%s bids and %s asks).',
         data.bids.length,
         data.asks.length,
       );
-
-      return data;
     }),
   );
 
@@ -254,7 +263,7 @@ export const getObservableRadarRelayOrders = ({
   // TODO: Make it so, that every time we are fetching a new snapshot (every
   // time we (re-)open the connection), the websocket messages are buffered
   // until the snapshot is emitted.
-  return Rx.merge(snapshot$, messages$);
+  return Rx.merge(snapshot$, messages$).pipe(share());
 };
 
 export const standardizeStream = (

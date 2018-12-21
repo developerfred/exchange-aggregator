@@ -1,19 +1,31 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
-import { tap, scan } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 import commander from 'commander';
 import { Exchange, Network, Options } from './types';
 import {
   getObservableRadarRelayOrders,
-  standardizeStream,
+  standardizeStream as standarizeRadarRelayStream,
 } from './exchanges/radar-relay';
-import { debugEvent, scanEvent } from './exchanges';
+import {
+  getObservableKrakenOrders,
+  standardizeStream as standarizeKrakenStream,
+} from './exchanges/kraken';
+import {
+  getObservableKyberOrders,
+  standardizeStream as standarizeKyberStream,
+} from './exchanges/kyber';
+import { debugEvent } from './exchanges';
 
 const debug = require('debug')('exchange-aggregator');
 
 export const exchangeOrderObservableCreators = {
   [Exchange.RADAR_RELAY]: (options: Options) =>
-    standardizeStream(getObservableRadarRelayOrders(options)),
+    standarizeRadarRelayStream(getObservableRadarRelayOrders(options)),
+  [Exchange.KRAKEN]: (options: Options) =>
+    standarizeKrakenStream(getObservableKrakenOrders(options)),
+  [Exchange.KYBER]: (options: Options) =>
+    standarizeKyberStream(getObservableKyberOrders(options)),
 };
 
 export const createExchangeOrderObservable = R.curry(
@@ -38,9 +50,9 @@ commander
   .description('Retrieve orders from the given exchanges')
   .option('-n, --network <network>', 'The network (KOVAN/MAINNET).', 'MAINNET')
   .option('-b, --base <symbol>', 'The base token symbol.', 'ZRX')
-  .option('-q, --quote <symbol>', 'The quote token symbol.', 'WETH')
+  .option('-q, --quote <symbol>', 'The quote token symbol.', 'ETH')
   .action(async (args, options) => {
-    const allowed = ['radar-relay'];
+    const allowed = Object.keys(Exchange);
     const invalid = R.difference(args, allowed);
 
     if (invalid && invalid.length) {
@@ -59,19 +71,13 @@ commander
       {
         base: options.base,
         quote: options.quote,
-        network: Network.MAINNET,
+        network: (Network[options.network] as unknown) as Network,
       },
-      [Exchange.RADAR_RELAY],
+      exchanges,
     );
 
     Rx.merge(...observables)
-      .pipe(
-        tap(value => debugEvent(value)),
-        scan(scanEvent, {}),
-        tap(value =>
-          debug(`Orderbook contains %s orders.`, Object.keys(value).length),
-        ),
-      )
+      .pipe(tap(value => debugEvent(value)))
       .subscribe(
         message => {
           // Nothing to do here.

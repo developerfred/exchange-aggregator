@@ -1,5 +1,7 @@
 export enum Exchange {
   'RADAR_RELAY' = 'RADAR_RELAY',
+  'KRAKEN' = 'KRAKEN',
+  'KYBER' = 'KYBER',
 }
 
 export enum Network {
@@ -14,8 +16,10 @@ export interface Options {
 }
 
 export interface Order {
-  id: string;
-  original: any;
+  price: number;
+  volume: number;
+  id?: string;
+  metadata?: any;
 }
 
 export enum StandardizedMessageType {
@@ -25,28 +29,32 @@ export enum StandardizedMessageType {
   'SNAPSHOT' = 'SNAPSHOT',
 }
 
+export type OrderType = 'ASK' | 'BID';
+
 export interface OrderMessage {
-  type: StandardizedMessageType;
   id: string;
+  type: OrderType;
+  event: StandardizedMessageType;
   exchange: Exchange;
 }
 
 export interface AddOrderMessage extends OrderMessage {
-  type: StandardizedMessageType.ADD;
+  event: StandardizedMessageType.ADD;
   order: Order;
 }
 
 export interface RemoveOrderMessage extends OrderMessage {
-  type: StandardizedMessageType.REMOVE;
+  event: StandardizedMessageType.REMOVE;
 }
 
 export interface FillOrderMessage extends OrderMessage {
-  type: StandardizedMessageType.FILL;
+  event: StandardizedMessageType.FILL;
   order: Order;
 }
 
 export interface SnapshotMessage {
-  type: StandardizedMessageType.SNAPSHOT;
+  event: StandardizedMessageType.SNAPSHOT;
   exchange: Exchange;
-  snapshot: Order[];
+  asks: Order[];
+  bids: Order[];
 }
