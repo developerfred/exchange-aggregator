@@ -47,46 +47,47 @@ commander.description('The exchange-aggregator testing tool.');
 
 commander
   .command('orders [exchanges...]')
+  .option(
+    '-n, --network <network>',
+    'The network (KOVAN/MAINNET).',
+    /(MAINNET|KOVAN)/,
+    'MAINNET',
+  )
+  .option('-b, --base <symbol>', 'The base token symbol.', /[A-Z]{3,4}/, 'ZRX')
+  .option(
+    '-q, --quote <symbol>',
+    'The quote token symbol.',
+    /[A-Z]{3,4}/,
+    'ETH',
+  )
   .description('Retrieve orders from the given exchanges')
-  .option('-n, --network <network>', 'The network (KOVAN/MAINNET).', 'MAINNET')
-  .option('-b, --base <symbol>', 'The base token symbol.', 'ZRX')
-  .option('-q, --quote <symbol>', 'The quote token symbol.', 'ETH')
-  .action(async (args, options) => {
-    const allowed = Object.keys(Exchange);
-    const invalid = R.difference(args, allowed);
+  .action((args, options) => {
+    const supported = Object.keys(Exchange);
+    const invalid = R.difference(args, supported);
 
     if (invalid && invalid.length) {
       console.error(
-        `Invalid exchanges ${invalid.join(
-          ', ',
-        )}. Supported exchanges are ${allowed.join(', ')}.`,
+        `Invalid exchanges %s. Supported exchanges are %s.`,
+        invalid.join(', '),
+        supported.join(', '),
       );
+
       process.exit(1);
     }
 
-    const exchanges = args.length ? args : allowed;
-    debug('Aggregating orderbook for %s.', exchanges.join(', '));
+    const exchanges = args.length ? args : supported;
+    const opts = {
+      base: options.base,
+      quote: options.quote,
+      network: (Network[options.network] as unknown) as Network,
+    };
 
-    const observables = createExchangeOrderObservables(
-      {
-        base: options.base,
-        quote: options.quote,
-        network: (Network[options.network] as unknown) as Network,
-      },
-      exchanges,
-    );
+    debug('Aggregating orderbook for %s.', exchanges.join(', '));
+    const observables = createExchangeOrderObservables(opts, exchanges);
 
     Rx.merge(...observables)
       .pipe(tap(value => debugEvent(value)))
-      .subscribe(
-        message => {
-          // Nothing to do here.
-        },
-        error => {
-          console.error(error);
-          process.exit(1);
-        },
-      );
+      .subscribe();
 
     process.stdin.resume();
   });
