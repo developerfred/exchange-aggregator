@@ -29,12 +29,13 @@
     "lib/"
   ],
   "scripts": {
+    "prepublish": "yarn lint && yarn test && yarn build",
     "prebuild": "rimraf lib",
     "build": "tsc -p tsconfig.json",
     "postbuild": "yarn bundle",
     "bundle": "rollup -c",
     "clean": "rimraf lib && rimraf coverage",
-    "dev": "ts-node-dev src/test orders",
+    "dev": "ts-node-dev src/dev orders",
     "format": "prettier --write src/**/*.ts",
     "lint:prettier": "yarn prettier --list-different src/**/*.ts",
     "lint:tslint": "tsc --noEmit && tslint src/**/*.ts",
