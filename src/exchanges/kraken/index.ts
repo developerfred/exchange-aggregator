@@ -1,32 +1,58 @@
 import * as Rx from 'rxjs';
+import * as R from 'ramda';
 import axios from 'axios';
 import {
   map,
-  tap,
   switchMap,
   share,
   delay,
   retryWhen,
   distinctUntilChanged,
+  tap,
 } from 'rxjs/operators';
 import {
   Network,
-  Options,
   Order,
-  StandardizedMessageType,
+  NormalizedMessageType,
   Exchange,
+  OrderType,
+  SnapshotMessage,
+  Options,
 } from '../../types';
+import { createPrice } from '@melonproject/token-math/price';
+import { createQuantity } from '@melonproject/token-math/quantity';
+import { debugEvent } from '..';
 
 const debug = require('debug')('exchange-aggregator:kraken');
 
-const getHttpUrl = (base: string, quote: string, network: Network) => {
-  switch (network) {
+const getHttpUrl = (options: Options) => {
+  const base = options.pair.base.symbol;
+  const quote = options.pair.quote.symbol;
+
+  switch (options.network) {
     case Network.MAINNET:
       return `https://api.kraken.com/0/public/Depth?pair=${base}${quote}`;
     default:
       throw new Error('Kraken only supports the MAINNET network.');
   }
 };
+
+const normalizeOrder = R.curryN(
+  3,
+  (options: Options, type: OrderType, order: any): Order => {
+    // TODO: Figure out the right formula here.
+    const price = createPrice(
+      createQuantity(options.pair.base, parseFloat(order[0])),
+      createQuantity(options.pair.quote, parseFloat(order[1])),
+    );
+
+    return {
+      type,
+      exchange: Exchange.KRAKEN,
+      trade: price,
+    };
+  },
+);
 
 interface KrakenOrderbook {
   base: string;
@@ -42,74 +68,47 @@ interface KrakenResponse {
   };
 }
 
-export const getObservableKrakenOrders = ({
-  base,
-  quote,
-  network,
-}: Options) => {
+export const observeKraken = (options: Options) => {
   const polling$ = Rx.interval(5000).pipe(
     switchMap(() => {
-      debug(`Loading snapshot for market ${base}-${quote}.`);
-      const url = getHttpUrl(base, quote, network);
+      const url = getHttpUrl(options);
       return Rx.from(axios.get(url).then(result => result.data) as Promise<
         KrakenResponse
       >);
     }),
-    map(data => {
-      if (data.error && data.error.length) {
-        throw new Error('Error while trying to fetch the snapshot.');
-      }
+    map(
+      (data): Order[] => {
+        if (data.error && data.error.length) {
+          throw new Error('Error while trying to fetch the snapshot.');
+        }
 
-      const orderbook = (data.result && data.result[`X${base}X${quote}`]) || {
-        asks: [],
-        bids: [],
-      };
+        const key = `X${options.pair.base.symbol}X${options.pair.quote.symbol}`;
+        const orderbook = (data.result && data.result[key]) || {
+          asks: [],
+          bids: [],
+        };
 
-      return {
-        ...orderbook,
-        base,
-        quote,
-      } as KrakenOrderbook;
-    }),
-    tap(orderbook => {
-      debug(
-        'Loaded orderbook with %s bids and %s asks.',
-        orderbook.bids.length,
-        orderbook.asks.length,
-      );
-    }),
-    retryWhen(error => {
-      debug('Kraken failed with error.');
-      return error.pipe(delay(10000));
-    }),
+        return [].concat(
+          normalizeOrder(OrderType.ASK, orderbook.asks),
+          normalizeOrder(OrderType.BID, orderbook.bids),
+        );
+      },
+    ),
+    retryWhen(error => error.pipe(delay(10000))),
     distinctUntilChanged(),
   );
 
-  return polling$.pipe(share());
-};
-
-const standardizeOrder = (order: any): Order => ({
-  price: parseFloat(order[0]),
-  volume: parseFloat(order[1]),
-});
-
-export const standardizeStream = (
-  stream$: ReturnType<typeof getObservableKrakenOrders>,
-) => {
-  return stream$.pipe(
-    map(orderbook => {
-      const asks = orderbook.asks.map(order => standardizeOrder(order));
-
-      const bids = orderbook.bids.map(order => standardizeOrder(order));
-
-      return {
-        event: StandardizedMessageType.SNAPSHOT,
+  const orders$ = polling$.pipe(share());
+  return orders$.pipe(
+    map(
+      (orders): SnapshotMessage => ({
+        event: NormalizedMessageType.SNAPSHOT,
         exchange: Exchange.KRAKEN,
-        base: orderbook.base,
-        quote: orderbook.quote,
-        asks,
-        bids,
-      };
+        orders,
+      }),
+    ),
+    tap(value => {
+      debug(...debugEvent(value));
     }),
   );
 };

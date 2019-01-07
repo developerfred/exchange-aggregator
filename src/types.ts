@@ -1,7 +1,11 @@
+import { PriceInterface } from '@melonproject/token-math/price';
+import { TokenInterface } from '@melonproject/token-math/token';
+
 export enum Exchange {
   'RADAR_RELAY' = 'RADAR_RELAY',
   'KRAKEN' = 'KRAKEN',
   'KYBER' = 'KYBER',
+  'ETHFINEX' = 'ETHFINEX',
 }
 
 export enum Network {
@@ -9,52 +13,52 @@ export enum Network {
   'KOVAN' = 42,
 }
 
+export interface AssetPair {
+  base: TokenInterface;
+  quote: TokenInterface;
+}
+
 export interface Options {
-  base: string;
-  quote: string;
+  pair: AssetPair;
   network: Network;
 }
 
 export interface Order {
-  price: number;
-  volume: number;
   id?: string;
+  exchange: Exchange;
+  type: OrderType;
+  trade: PriceInterface;
   metadata?: any;
 }
 
-export enum StandardizedMessageType {
+export enum NormalizedMessageType {
   'ADD' = 'ADD',
   'REMOVE' = 'REMOVE',
-  'FILL' = 'FILL',
   'SNAPSHOT' = 'SNAPSHOT',
 }
 
-export type OrderType = 'ASK' | 'BID';
+export enum OrderType {
+  'ASK' = 'ASK',
+  'BID' = 'BID',
+}
 
 export interface OrderMessage {
   id: string;
-  type: OrderType;
-  event: StandardizedMessageType;
+  event: NormalizedMessageType;
   exchange: Exchange;
 }
 
-export interface AddOrderMessage extends OrderMessage {
-  event: StandardizedMessageType.ADD;
+export interface AddOrUpdateOrderMessage extends OrderMessage {
+  event: NormalizedMessageType.ADD;
   order: Order;
 }
 
 export interface RemoveOrderMessage extends OrderMessage {
-  event: StandardizedMessageType.REMOVE;
-}
-
-export interface FillOrderMessage extends OrderMessage {
-  event: StandardizedMessageType.FILL;
-  order: Order;
+  event: NormalizedMessageType.REMOVE;
 }
 
 export interface SnapshotMessage {
-  event: StandardizedMessageType.SNAPSHOT;
+  event: NormalizedMessageType.SNAPSHOT;
   exchange: Exchange;
-  asks: Order[];
-  bids: Order[];
+  orders: Order[];
 }

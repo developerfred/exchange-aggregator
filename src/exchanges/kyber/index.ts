@@ -7,20 +7,50 @@ import {
   delay,
   retryWhen,
   distinctUntilChanged,
+  tap,
 } from 'rxjs/operators';
 import {
   Network,
   Options,
-  StandardizedMessageType,
+  NormalizedMessageType,
   Exchange,
   SnapshotMessage,
   Order,
+  OrderType,
 } from '../../types';
+import { createPrice } from '@melonproject/token-math/price';
+import { createQuantity } from '@melonproject/token-math/quantity';
+import { debugEvent } from '..';
 
 const debug = require('debug')('exchange-aggregator:kyber');
 
-const getCurrenciesHttpUrl = (network: Network) => {
-  switch (network) {
+interface Currency {
+  name: string;
+  decimals: number;
+  address: string;
+  symbol: string;
+  id: string;
+}
+
+interface KyberCurrenciesResponse {
+  error: any;
+  data: Currency[];
+}
+
+interface Rate {
+  src_id: string;
+  dst_id: string;
+  src_qty: number[];
+  dst_qty: [];
+}
+
+interface KyberRateResponse {
+  error: any;
+  data: Rate[];
+}
+
+const getCurrenciesHttpUrl = (options: Options) => {
+  switch (options.network) {
     case Network.MAINNET:
       return 'https://api.kyber.network/currencies';
     default:
@@ -29,7 +59,7 @@ const getCurrenciesHttpUrl = (network: Network) => {
 };
 
 const getRateHttpUrl = (
-  network: Network,
+  options: Options,
   type: 'buy' | 'sell',
   currency: string,
   interval: number[],
@@ -48,7 +78,7 @@ const getRateHttpUrl = (
     })
     .join('&');
 
-  switch (network) {
+  switch (options.network) {
     case Network.MAINNET:
       return `${prefix}?${suffix}`;
     default:
@@ -56,86 +86,60 @@ const getRateHttpUrl = (
   }
 };
 
-interface Currency {
-  name: string;
-  decimals: number;
-  address: string;
-  symbol: string;
-  id: string;
-}
-
-interface KyberCurrenciesResponse {
-  error: any;
-  data: Currency[];
-}
-
-interface KyberOrderbook {
-  base: string;
-  quote: string;
-  asks: Order[];
-  bids: Order[];
-}
-
-interface Rate {
-  src_id: string;
-  dst_id: string;
-  src_qty: number[];
-  dst_qty: [];
-}
-
-interface KyberRateResponse {
-  error: any;
-  data: Rate[];
-}
-
-export const getObservableKyberOrders = ({ base, quote, network }: Options) => {
-  if (quote !== 'ETH') {
+export const observeKyber = (options: Options) => {
+  if (options.pair.quote.symbol !== 'ETH') {
     throw new Error('Kyber only support ETH as a quote token.');
   }
 
   const currencies$ = Rx.defer(() => {
-    const url = getCurrenciesHttpUrl(network);
-    return Rx.from(axios.get(url).then(result => result.data) as Promise<
-      KyberCurrenciesResponse
-    >);
+    const url = getCurrenciesHttpUrl(options);
+    const request = axios.get(url).then(result => result.data);
+    return Rx.from(request as Promise<KyberCurrenciesResponse>);
   }).pipe(map(result => result.data));
 
-  const formatResponse = (
-    type: 'buy' | 'sell',
-    response: KyberRateResponse,
-  ) => {
+  const formatResponse = (type: OrderType, response: KyberRateResponse) => {
     if (response.error) {
       throw new Error(`Error trying to fetch Kyber ${type} rates.`);
     }
 
-    const volumeKey = type === 'buy' ? 'dst_qty' : 'src_qty';
-    const priceKey = type === 'buy' ? 'src_qty' : 'dst_qty';
+    const volumeKey = type === OrderType.ASK ? 'dst_qty' : 'src_qty';
+    const priceKey = type === OrderType.ASK ? 'src_qty' : 'dst_qty';
     const groups = response.data.map(current => {
-      return (current[volumeKey] as any).map(
-        (volume, index) =>
-          ({
-            volume,
-            price: current[priceKey][index],
-          } as Order),
-      );
+      return Object.keys(current[volumeKey] as any).map(index => {
+        // TODO: Is this correct?
+        const price = createPrice(
+          createQuantity(options.pair.base, current[priceKey][index]),
+          createQuantity(options.pair.quote, current[volumeKey][index]),
+        );
+
+        return {
+          type,
+          exchange: Exchange.KYBER,
+          trade: price,
+        };
+      });
     });
 
     return [].concat(...groups) as Order[];
   };
 
   const pollRate = (currencies: Currency[]) => {
+    const base = options.pair.base.symbol;
+    const quote = options.pair.quote.symbol;
     const currency = currencies.find(R.propEq('symbol', base));
     if (!currency) {
       throw new Error(`The ${base} token is not supported.`);
     }
 
+    // TODO: Pass the interval through configuration.
     const interval = [1, 10, 20, 30, 40, 50, 75, 100, 125, 150];
     return Rx.interval(5000).pipe(
+      tap(() => {
+        debug(`Loading snapshot for market %s-%s.`, base, quote);
+      }),
       switchMap(() => {
-        debug(`Loading snapshots for market %s-%s.`, base, quote);
-
-        const buyUrl = getRateHttpUrl(network, 'buy', currency.id, interval);
-        const sellUrl = getRateHttpUrl(network, 'sell', currency.id, interval);
+        const buyUrl = getRateHttpUrl(options, 'buy', currency.id, interval);
+        const sellUrl = getRateHttpUrl(options, 'sell', currency.id, interval);
         const sellRequest = axios
           .get(sellUrl)
           .then(result => result.data) as Promise<KyberRateResponse>;
@@ -147,40 +151,27 @@ export const getObservableKyberOrders = ({ base, quote, network }: Options) => {
       }),
       distinctUntilChanged(),
       map(
-        ([buyResponse, sellResponse]) =>
-          ({
-            base,
-            quote,
-            asks: formatResponse('buy', buyResponse),
-            bids: formatResponse('sell', sellResponse),
-          } as KyberOrderbook),
+        ([buyResponse, sellResponse]): Order[] =>
+          [].concat(
+            formatResponse(OrderType.BID, buyResponse),
+            formatResponse(OrderType.ASK, sellResponse),
+          ),
       ),
-      retryWhen(error => {
-        debug('Kyber failed with error.');
-        return error.pipe(delay(10000));
-      }),
+      retryWhen(error => error.pipe(delay(10000))),
     );
   };
 
   const rates$ = currencies$.pipe(switchMap(pollRate));
-
-  return rates$;
-};
-
-export const standardizeStream = (
-  stream$: ReturnType<typeof getObservableKyberOrders>,
-) => {
-  return stream$.pipe(
+  return rates$.pipe(
     map(
-      orderbook =>
-        ({
-          event: StandardizedMessageType.SNAPSHOT,
-          exchange: Exchange.KYBER,
-          base: orderbook.base,
-          quote: orderbook.quote,
-          asks: orderbook.asks,
-          bids: orderbook.bids,
-        } as SnapshotMessage),
+      (orders): SnapshotMessage => ({
+        event: NormalizedMessageType.SNAPSHOT,
+        exchange: Exchange.KYBER,
+        orders,
+      }),
     ),
+    tap(value => {
+      debug(...debugEvent(value));
+    }),
   );
 };

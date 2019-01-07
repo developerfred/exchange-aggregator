@@ -1,31 +1,20 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
-import { tap } from 'rxjs/operators';
 import commander from 'commander';
 import { Exchange, Network, Options } from './types';
-import {
-  getObservableRadarRelayOrders,
-  standardizeStream as standarizeRadarRelayStream,
-} from './exchanges/radar-relay';
-import {
-  getObservableKrakenOrders,
-  standardizeStream as standarizeKrakenStream,
-} from './exchanges/kraken';
-import {
-  getObservableKyberOrders,
-  standardizeStream as standarizeKyberStream,
-} from './exchanges/kyber';
-import { debugEvent } from './exchanges';
+import { observeRadarRelay } from './exchanges/radar-relay';
+import { observeKraken } from './exchanges/kraken';
+import { observeKyber } from './exchanges/kyber';
+import { observeEthfinex } from './exchanges/ethfinex';
+import { createToken } from '@melonproject/token-math/token';
 
 const debug = require('debug')('exchange-aggregator');
 
 export const exchangeOrderObservableCreators = {
-  [Exchange.RADAR_RELAY]: (options: Options) =>
-    standarizeRadarRelayStream(getObservableRadarRelayOrders(options)),
-  [Exchange.KRAKEN]: (options: Options) =>
-    standarizeKrakenStream(getObservableKrakenOrders(options)),
-  [Exchange.KYBER]: (options: Options) =>
-    standarizeKyberStream(getObservableKyberOrders(options)),
+  [Exchange.RADAR_RELAY]: (options: Options) => observeRadarRelay(options),
+  [Exchange.KRAKEN]: (options: Options) => observeKraken(options),
+  [Exchange.KYBER]: (options: Options) => observeKyber(options),
+  [Exchange.ETHFINEX]: (options: Options) => observeEthfinex(options),
 };
 
 export const createExchangeOrderObservable = R.curry(
@@ -76,19 +65,18 @@ commander
     }
 
     const exchanges = args.length ? args : supported;
-    const opts = {
-      base: options.base,
-      quote: options.quote,
+    const opts: Options = {
       network: (Network[options.network] as unknown) as Network,
+      pair: {
+        base: createToken(options.base),
+        quote: createToken(options.quote),
+      },
     };
 
     debug('Aggregating orderbook for %s.', exchanges.join(', '));
     const observables = createExchangeOrderObservables(opts, exchanges);
 
-    Rx.merge(...observables)
-      .pipe(tap(value => debugEvent(value)))
-      .subscribe();
-
+    Rx.merge(...observables).subscribe();
     process.stdin.resume();
   });
 

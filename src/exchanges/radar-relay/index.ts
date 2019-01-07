@@ -1,18 +1,8 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
 import axios from 'axios';
-import {
-  takeUntil,
-  skipUntil,
-  map,
-  switchMap,
-  retryWhen,
-  delay,
-  share,
-  filter,
-  tap,
-} from 'rxjs/operators';
-import { webSocket } from 'rxjs/webSocket';
+import { map, switchMap, filter, tap } from 'rxjs/operators';
+import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import isomorphicWs from 'isomorphic-ws';
 import {
   WebsocketEvent,
@@ -24,33 +14,57 @@ import {
   RadarCancelOrder,
   RadarRemoveOrder,
   RadarBook,
+  RadarSignedOrder,
 } from '@radarrelay/types';
 import {
   Network,
   Options,
   Exchange,
-  FillOrderMessage,
-  StandardizedMessageType,
-  AddOrderMessage,
+  NormalizedMessageType,
   RemoveOrderMessage,
   SnapshotMessage,
   OrderMessage,
   Order,
+  OrderType,
+  AddOrUpdateOrderMessage,
 } from '../../types';
+import { createPrice } from '@melonproject/token-math/price';
+import { createQuantity } from '@melonproject/token-math/quantity';
+import { debugEvent } from '..';
 
 const debug = require('debug')('exchange-aggregator:radar-relay');
 
 interface SubscribeMessage {
-  type: 'SUBSCRIBE';
-  topic: 'BOOK';
+  type: WebsocketRequestType.SUBSCRIBE;
+  topic: WebsocketRequestTopic.BOOK;
+  market: string;
+  requestId: number;
+}
+
+interface UnSubscribeMessage {
+  type: WebsocketRequestType.UNSUBSCRIBE;
+  topic: WebsocketRequestTopic.BOOK;
   market: string;
 }
 
-const subscribeMessage = (base: string, quote: string) => {
-  const baseToken = cleanToken(base);
-  const quoteToken = cleanToken(quote);
+const subscribeMessage = (options: Options, id: number) => {
+  const baseToken = cleanToken(options.pair.base.symbol);
+  const quoteToken = cleanToken(options.pair.quote.symbol);
   const message: SubscribeMessage = {
     type: WebsocketRequestType.SUBSCRIBE,
+    topic: WebsocketRequestTopic.BOOK,
+    market: `${baseToken}-${quoteToken}`,
+    requestId: id,
+  };
+
+  return message;
+};
+
+const unSubscribeMessage = (options: Options) => {
+  const baseToken = cleanToken(options.pair.base.symbol);
+  const quoteToken = cleanToken(options.pair.quote.symbol);
+  const message: UnSubscribeMessage = {
+    type: WebsocketRequestType.UNSUBSCRIBE,
     topic: WebsocketRequestTopic.BOOK,
     market: `${baseToken}-${quoteToken}`,
   };
@@ -58,53 +72,74 @@ const subscribeMessage = (base: string, quote: string) => {
   return message;
 };
 
-const standardizeOrder = (order: any): Order => ({
-  price: parseFloat(order.price),
-  volume: parseFloat(order.remainingBaseTokenAmount),
-  metadata: order,
+const normalizeOrder = R.curryN(
+  2,
+  (options: Options, order: RadarSignedOrder): Order => {
+    const base = parseFloat((order.remainingBaseTokenAmount as any) as string);
+    const quote = parseFloat(
+      (order.remainingQuoteTokenAmount as any) as string,
+    );
+    const price = createPrice(
+      createQuantity(options.pair.base, base),
+      createQuantity(options.pair.quote, quote),
+    );
+
+    return {
+      id: order.orderHash,
+      type: (order.type as any) as OrderType,
+      exchange: Exchange.RADAR_RELAY,
+      trade: price,
+    };
+  },
+);
+
+const normalizeNewOrderEvent = R.curryN(
+  2,
+  (options: Options, event: RadarNewOrder): AddOrUpdateOrderMessage => ({
+    event: NormalizedMessageType.ADD,
+    exchange: Exchange.RADAR_RELAY,
+    id: event.order.orderHash,
+    order: normalizeOrder(options, event.order),
+  }),
+);
+
+const normalizeFillOrderEvent = R.curryN(
+  2,
+  (options: Options, event: RadarFillOrder): AddOrUpdateOrderMessage => ({
+    event: NormalizedMessageType.ADD,
+    exchange: Exchange.RADAR_RELAY,
+    id: event.order.orderHash,
+    order: normalizeOrder(options, event.order),
+  }),
+);
+
+const normalizeCancelOrderEvent = (
+  event: RadarCancelOrder,
+): RemoveOrderMessage => ({
+  event: NormalizedMessageType.REMOVE,
+  exchange: Exchange.RADAR_RELAY,
+  id: event.orderHash,
 });
 
-const standardizeNewOrderEvent = (event: RadarNewOrder) =>
-  ({
-    event: StandardizedMessageType.ADD,
-    exchange: Exchange.RADAR_RELAY,
-    type: event.order.type,
-    id: event.order.orderHash,
-    order: standardizeOrder(event.order),
-  } as AddOrderMessage);
+const normalizeRemoveOrderEvent = (
+  event: RadarRemoveOrder,
+): RemoveOrderMessage => ({
+  event: NormalizedMessageType.REMOVE,
+  exchange: Exchange.RADAR_RELAY,
+  id: event.orderHash,
+});
 
-const standardizeFillOrderEvent = (event: RadarFillOrder) =>
-  ({
-    event: StandardizedMessageType.FILL,
+const normalizeSnapshotEvent = R.curryN(
+  2,
+  (options: Options, book: RadarBook): SnapshotMessage => ({
+    event: NormalizedMessageType.SNAPSHOT,
     exchange: Exchange.RADAR_RELAY,
-    type: event.order.type,
-    id: event.order.orderHash,
-    order: standardizeOrder(event.order),
-  } as FillOrderMessage);
-
-const standardizeCancelOrderEvent = (event: RadarCancelOrder) =>
-  ({
-    event: StandardizedMessageType.REMOVE,
-    exchange: Exchange.RADAR_RELAY,
-    type: event.orderType,
-    id: event.orderHash,
-  } as RemoveOrderMessage);
-
-const standardizeRemoveOrderEvent = (event: RadarRemoveOrder) =>
-  ({
-    event: StandardizedMessageType.REMOVE,
-    exchange: Exchange.RADAR_RELAY,
-    type: event.orderType,
-    id: event.orderHash,
-  } as RemoveOrderMessage);
-
-const standardizeSnapshotEvent = (book: RadarBook) =>
-  ({
-    event: StandardizedMessageType.SNAPSHOT,
-    exchange: Exchange.RADAR_RELAY,
-    asks: book.asks.map(standardizeOrder),
-    bids: book.bids.map(standardizeOrder),
-  } as SnapshotMessage);
+    orders: [].concat(
+      book.asks.map(normalizeOrder(options)),
+      book.bids.map(normalizeOrder(options)),
+    ),
+  }),
+);
 
 export const isSnapshotEvent = R.allPass([R.has('asks'), R.has('bids')]) as (
   payload,
@@ -154,8 +189,47 @@ export const isRemoveOrderEvent = R.allPass([
   event: RadarRemoveOrder;
 };
 
-const getWebsocketUrl = (network: Network) => {
-  switch (network) {
+const websocketConnections: {
+  [key: string]: WebSocketSubject<WebsocketEvent | RadarBook>;
+} = {
+  [Network.KOVAN]: undefined,
+  [Network.MAINNET]: undefined,
+};
+
+const getWebsocketConnection = (options: Options) => {
+  if (typeof websocketConnections[options.network] !== 'undefined') {
+    return websocketConnections[options.network];
+  }
+
+  const open$ = new Rx.Subject();
+  const close$ = new Rx.Subject();
+
+  const url = getWebsocketUrl(options);
+  const connection$ = webSocket<WebsocketEvent | RadarBook>({
+    WebSocketCtor: isomorphicWs,
+    closeObserver: close$,
+    openObserver: open$,
+    url,
+  });
+
+  open$.subscribe(() => {
+    debug('Opening connection.');
+  });
+
+  close$.subscribe(() => {
+    debug('Closing connection.');
+  });
+
+  return (websocketConnections[options.network] = connection$);
+};
+
+let requestId = 0;
+const getRequestId = () => {
+  return (requestId = requestId + 1);
+};
+
+const getWebsocketUrl = (options: Options) => {
+  switch (options.network) {
     case Network.KOVAN:
       return 'wss://ws.kovan.radarrelay.com/v2';
     case Network.MAINNET:
@@ -174,116 +248,67 @@ const cleanToken = (token: string) => {
   }
 };
 
-const getHttpUrl = (base: string, quote: string, network: Network) => {
-  const baseToken = cleanToken(base);
-  const quoteToken = cleanToken(quote);
+const getHttpUrl = (options: Options) => {
+  const base = cleanToken(options.pair.base.symbol);
+  const quote = cleanToken(options.pair.quote.symbol);
 
-  switch (network) {
-    case Network.KOVAN:
-      return `https://api.kovan.radarrelay.com/v2/markets/${baseToken}-${quoteToken}/book`;
-    case Network.MAINNET:
-      return `https://api.radarrelay.com/v2/markets/${baseToken}-${quoteToken}/book`;
+  switch (options.network) {
+    case Network.KOVAN: {
+      const prefix = 'https://api.kovan.radarrelay.com';
+      return `${prefix}/v2/markets/${base}-${quote}/book`;
+    }
+
+    case Network.MAINNET: {
+      const prefix = 'https://api.kovan.radarrelay.com';
+      return `${prefix}/v2/markets/${base}-${quote}/book`;
+    }
+
     default:
       throw new Error('Invalid network.');
   }
 };
 
-export const getObservableRadarRelayOrders = ({
-  base,
-  quote,
-  network,
-}: Options) => {
-  const open$ = new Rx.Subject();
-  const close$ = new Rx.Subject();
-
-  const ws$ = webSocket({
-    WebSocketCtor: isomorphicWs,
-    closeObserver: close$,
-    openObserver: open$,
-    url: getWebsocketUrl(network),
-  });
-
-  open$.subscribe(() => {
-    debug('Opening connection.');
-    ws$.next(subscribeMessage(base, quote));
-  });
-
-  close$.subscribe(() => {
-    debug('Closing connection.');
-  });
-
-  const socket$ = ws$.pipe(
-    retryWhen(errors => {
-      debug('Connection error. Retrying after a delay.', errors);
-      return errors.pipe(delay(1000));
-    }),
+export const observeRadarRelay = (options: Options) => {
+  const id = getRequestId();
+  const ws$ = getWebsocketConnection(options);
+  const socket$ = ws$.multiplex(
+    () => subscribeMessage(options, id),
+    () => unSubscribeMessage(options),
+    R.propEq('requestId', id),
   );
-
-  // Send a ping signal after a certain quiet period (no message
-  // received within 5 seconds).
-  const ping$ = socket$.pipe(
-    skipUntil(open$),
-    takeUntil(close$),
-    switchMap(() => Rx.timer(5000)),
-  );
-
-  ping$.subscribe(() => {
-    debug('Sending ping signal.');
-    ws$.next('ping');
-  });
 
   const snapshot$ = socket$.pipe(
-    filter(
-      R.allPass([
-        R.propEq('type', WebsocketRequestType.SUBSCRIBE),
-        R.propEq('topic', WebsocketRequestTopic.BOOK),
-      ]),
-    ),
-    switchMap(() => {
-      debug(`Loading snapshot for market ${base}-${quote}.`);
-      const url = getHttpUrl(base, quote, network);
-      return Rx.from(axios.get(url).then(result => result.data as RadarBook));
+    filter(R.propEq('type', WebsocketRequestType.SUBSCRIBE)),
+    tap(() => {
+      const base = options.pair.base.symbol;
+      const quote = options.pair.quote.symbol;
+      debug(`Loading snapshot for market %s-%s.`, base, quote);
     }),
-    tap(data => {
-      debug(
-        'Receiving snapshot (%s bids and %s asks).',
-        data.bids.length,
-        data.asks.length,
-      );
+    switchMap(() => {
+      const url = getHttpUrl(options);
+      return Rx.from(axios.get(url).then(result => result.data as RadarBook));
     }),
   );
 
-  const messages$ = socket$.pipe(
-    filter(isOrderEvent),
-    tap(value => {
-      debug('Receiving %s message.', value.action);
-    }),
-  );
+  const messages$ = ws$.pipe(filter(isOrderEvent));
 
   // TODO: Make it so, that every time we are fetching a new snapshot (every
   // time we (re-)open the connection), the websocket messages are buffered
   // until the snapshot is emitted.
-  return Rx.merge(snapshot$, messages$).pipe(share());
-};
+  const events$ = Rx.merge(snapshot$, messages$);
 
-export const standardizeStream = (
-  stream$: ReturnType<typeof getObservableRadarRelayOrders>,
-) => {
-  const usingEvent = <T, U>(fn: (event: T) => U) =>
-    R.compose(
-      fn,
-      R.prop('event') as (payload: WebsocketEvent) => T,
-    );
-
-  return stream$.pipe(
+  return events$.pipe(
     map(R.cond([
-      [isNewOrderEvent, usingEvent(standardizeNewOrderEvent)],
-      [isFillOrderEvent, usingEvent(standardizeFillOrderEvent)],
-      [isCancelOrderEvent, usingEvent(standardizeCancelOrderEvent)],
-      [isRemoveOrderEvent, usingEvent(standardizeRemoveOrderEvent)],
-      [isSnapshotEvent, standardizeSnapshotEvent],
+      [isSnapshotEvent, data => normalizeSnapshotEvent(options, data)],
+      [isNewOrderEvent, data => normalizeNewOrderEvent(options, data.event)],
+      [isFillOrderEvent, data => normalizeFillOrderEvent(options, data.event)],
+      [isCancelOrderEvent, data => normalizeCancelOrderEvent(data.event)],
+      [isRemoveOrderEvent, data => normalizeRemoveOrderEvent(data.event)],
     ]) as (
       payload: WebsocketEvent | RadarBook,
     ) => OrderMessage | SnapshotMessage),
+    tap(value => {
+      debug(...debugEvent(value));
+    }),
   );
 };

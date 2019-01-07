@@ -1,57 +1,46 @@
 import * as R from 'ramda';
 import {
-  StandardizedMessageType,
-  AddOrderMessage,
-  FillOrderMessage,
   SnapshotMessage,
   RemoveOrderMessage,
   OrderMessage,
+  AddOrUpdateOrderMessage,
+  NormalizedMessageType,
 } from '../types';
-
-const debug = require('debug')('exchange-aggregator');
 
 export const isOrderEvent = R.allPass([R.has('event'), R.has('exchange')]);
 
-export const isAddOrderEvent = R.allPass([
+export const isAddOrUpdateOrderEvent = R.allPass([
   isOrderEvent,
-  R.propEq('event', StandardizedMessageType.ADD),
-]) as (payload) => payload is AddOrderMessage;
-
-export const isFillOrderEvent = R.allPass([
-  isOrderEvent,
-  R.propEq('event', StandardizedMessageType.FILL),
-]) as (payload) => payload is FillOrderMessage;
+  R.propEq('event', NormalizedMessageType.ADD),
+]) as (payload) => payload is AddOrUpdateOrderMessage;
 
 export const isRemoveOrderEvent = R.allPass([
   isOrderEvent,
-  R.propEq('event', StandardizedMessageType.REMOVE),
+  R.propEq('event', NormalizedMessageType.REMOVE),
 ]) as (payload) => payload is RemoveOrderMessage;
 
 export const isSnapshotEvent = R.allPass([
   R.has('event'),
-  R.propEq('event', StandardizedMessageType.SNAPSHOT),
+  R.propEq('event', NormalizedMessageType.SNAPSHOT),
 ]) as (payload) => payload is SnapshotMessage;
 
-export const debugAddOrderEvent = (value: AddOrderMessage): void =>
-  debug('%s: Adding order %s.', value.exchange, value.id);
+export const debugAddOrUpdateOrderEvent = (
+  value: AddOrUpdateOrderMessage,
+): any[] => ['Adding / updating order %s.', value.id];
 
-export const debugFillOrderEvent = (value: FillOrderMessage): void =>
-  debug('%s: Filling order %s.', value.exchange, value.id);
+export const debugRemoveOrderEvent = (value: RemoveOrderMessage): any[] => [
+  'Removing order %s.',
+  value.id,
+];
 
-export const debugRemoveOrderEvent = (value: RemoveOrderMessage): void =>
-  debug('%s: Removing order %s.', value.exchange, value.id);
+export const debugSnapshotEvent = (value: SnapshotMessage): any[] => [
+  'Snapshot with %s orders (bids and asks).',
+  value.orders.length,
+];
 
-export const debugSnapshotEvent = (value: SnapshotMessage): void =>
-  debug(
-    '%s: Snapshot with %s asks and %s bids.',
-    value.exchange,
-    value.asks.length,
-    value.bids.length,
-  );
-
-export const debugEvent = R.cond<OrderMessage | SnapshotMessage, void>([
-  [isAddOrderEvent, debugAddOrderEvent],
-  [isFillOrderEvent, debugFillOrderEvent],
+export const debugEvent = R.cond<OrderMessage | SnapshotMessage, any[]>([
+  [isAddOrUpdateOrderEvent, debugAddOrUpdateOrderEvent],
   [isRemoveOrderEvent, debugRemoveOrderEvent],
   [isSnapshotEvent, debugSnapshotEvent],
+  [R.T, (...value) => [...value]],
 ]);
