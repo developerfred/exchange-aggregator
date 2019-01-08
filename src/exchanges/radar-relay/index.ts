@@ -30,7 +30,7 @@ import {
 } from '../../types';
 import { createPrice } from '@melonproject/token-math/price';
 import { createQuantity } from '@melonproject/token-math/quantity';
-import { debugEvent } from '..';
+import { debugEvent } from '../debug';
 
 const debug = require('debug')('exchange-aggregator:radar-relay');
 

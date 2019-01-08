@@ -46,10 +46,10 @@
     "test:watch": "yarn test --watch"
   },
   "devDependencies": {
-    "@radarrelay/types": "^1.2.1",
     "@types/jest": "^23.3.9",
     "@types/node": "^10.12.10",
     "@types/ramda": "^0.25.44",
+    "cli-table": "^0.3.1",
     "commander": "^2.19.0",
     "debug": "^4.0.1",
     "husky": "^1.1.2",
@@ -69,6 +69,7 @@
   },
   "dependencies": {
     "@melonproject/token-math": "^0.0.22",
+    "@radarrelay/types": "^1.2.1",
     "axios": "^0.18.0",
     "isomorphic-ws": "^4.0.1",
     "ramda": "^0.26.1",

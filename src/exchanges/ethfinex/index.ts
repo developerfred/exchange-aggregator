@@ -11,10 +11,11 @@ import {
   Order,
   RemoveOrderMessage,
   NormalizedMessageType,
+  SnapshotMessage,
 } from '../../types';
 import { createPrice } from '@melonproject/token-math/price';
 import { createQuantity } from '@melonproject/token-math/quantity';
-import { debugEvent } from '..';
+import { debugEvent } from '../debug';
 
 const debug = require('debug')('exchange-aggregator:ethfinex');
 
@@ -109,6 +110,7 @@ const normalizeOrderEvent = R.curryN(
     const volume = Math.abs(parseFloat((amount as any) as string));
     const type = amount > 0 ? OrderType.BID : OrderType.ASK;
 
+    console.log(price, volume);
     // TODO: Figure out the right formula here.
     const trade = createPrice(
       createQuantity(options.pair.base, parseFloat((price as any) as string)),
@@ -119,11 +121,15 @@ const normalizeOrderEvent = R.curryN(
       price === 0 ? NormalizedMessageType.REMOVE : NormalizedMessageType.ADD;
 
     return {
-      event,
       id: (id as any) as string,
-      type,
-      trade,
+      event,
       exchange: Exchange.ETHFINEX,
+      order: {
+        id: (id as any) as string,
+        type,
+        trade,
+        exchange: Exchange.ETHFINEX,
+      },
     } as RemoveOrderMessage;
   },
 );
@@ -158,7 +164,8 @@ const normalizeSnapshotEvent = R.curryN(
 
     return {
       event: NormalizedMessageType.SNAPSHOT,
+      exchange: Exchange.ETHFINEX,
       orders: processed,
-    };
+    } as SnapshotMessage;
   },
 );
