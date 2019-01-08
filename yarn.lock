@@ -46,10 +46,10 @@
     reflect-metadata "^0.1.12"
     tslib "^1.8.1"
 
-"@melonproject/token-math@^0.0.22":
-  version "0.0.22"
-  resolved "https://registry.yarnpkg.com/@melonproject/token-math/-/token-math-0.0.22.tgz#9277d9d4fb8f7bb2d781a4ebdc21c3ed493bb087"
-  integrity sha512-2+l6k+QsL58Cd4yg6FRyOrV5VsHsbZCT3B9uWyhElGX5C48D/yNsjr4IijjTWLMI5KZJyfOSiszmxyBby0wK0w==
+"@melonproject/token-math@^0.0.23":
+  version "0.0.23"
+  resolved "https://registry.yarnpkg.com/@melonproject/token-math/-/token-math-0.0.23.tgz#c78eb71e90407ea82f540b2cf2698a65fb832623"
+  integrity sha512-MaaEK3U02TsTksM/dpdOO2WD+WYiPdp7DSofTvn1Pv85thbkNMxaeHKucmYKpjXlsk0bpyjcBprNFR+K4c8XSw==
   dependencies:
     bn.js "^4.11.8"
     web3-utils "^1.0.0-beta.36"

@@ -269,46 +269,51 @@ const getHttpUrl = (options: Options) => {
 };
 
 export const observeRadarRelay = (options: Options) => {
-  const id = getRequestId();
-  const ws$ = getWebsocketConnection(options);
-  const socket$ = ws$.multiplex(
-    () => subscribeMessage(options, id),
-    () => unSubscribeMessage(options),
-    R.propEq('requestId', id),
-  );
+  try {
+    const id = getRequestId();
+    const ws$ = getWebsocketConnection(options);
+    const socket$ = ws$.multiplex(
+      () => subscribeMessage(options, id),
+      () => unSubscribeMessage(options),
+      R.propEq('requestId', id),
+    );
 
-  const snapshot$ = socket$.pipe(
-    filter(R.propEq('type', WebsocketRequestType.SUBSCRIBE)),
-    tap(() => {
-      const base = options.pair.base.symbol;
-      const quote = options.pair.quote.symbol;
-      debug(`Loading snapshot for market %s-%s.`, base, quote);
-    }),
-    switchMap(() => {
-      const url = getHttpUrl(options);
-      return Rx.from(axios.get(url).then(result => result.data as RadarBook));
-    }),
-  );
+    const url = getHttpUrl(options);
+    const snapshot$ = socket$.pipe(
+      filter(R.propEq('type', WebsocketRequestType.SUBSCRIBE)),
+      tap(() => {
+        const base = options.pair.base.symbol;
+        const quote = options.pair.quote.symbol;
+        debug(`Loading snapshot for market %s-%s.`, base, quote);
+      }),
+      switchMap(() => axios.get(url).then(result => result.data as RadarBook)),
+    );
 
-  const messages$ = ws$.pipe(filter(isOrderEvent));
+    const messages$ = ws$.pipe(filter(isOrderEvent));
 
-  // TODO: Make it so, that every time we are fetching a new snapshot (every
-  // time we (re-)open the connection), the websocket messages are buffered
-  // until the snapshot is emitted.
-  const events$ = Rx.merge(snapshot$, messages$);
+    // TODO: Make it so, that every time we are fetching a new snapshot (every
+    // time we (re-)open the connection), the websocket messages are buffered
+    // until the snapshot is emitted.
+    const events$ = Rx.merge(snapshot$, messages$);
 
-  return events$.pipe(
-    map(R.cond([
-      [isSnapshotEvent, data => normalizeSnapshotEvent(options, data)],
-      [isNewOrderEvent, data => normalizeNewOrderEvent(options, data.event)],
-      [isFillOrderEvent, data => normalizeFillOrderEvent(options, data.event)],
-      [isCancelOrderEvent, data => normalizeCancelOrderEvent(data.event)],
-      [isRemoveOrderEvent, data => normalizeRemoveOrderEvent(data.event)],
-    ]) as (
-      payload: WebsocketEvent | RadarBook,
-    ) => OrderMessage | SnapshotMessage),
-    tap(value => {
-      debug(...debugEvent(value));
-    }),
-  );
+    return events$.pipe(
+      map(R.cond([
+        [isSnapshotEvent, data => normalizeSnapshotEvent(options, data)],
+        [isNewOrderEvent, data => normalizeNewOrderEvent(options, data.event)],
+        [
+          isFillOrderEvent,
+          data => normalizeFillOrderEvent(options, data.event),
+        ],
+        [isCancelOrderEvent, data => normalizeCancelOrderEvent(data.event)],
+        [isRemoveOrderEvent, data => normalizeRemoveOrderEvent(data.event)],
+      ]) as (
+        payload: WebsocketEvent | RadarBook,
+      ) => OrderMessage | SnapshotMessage),
+      tap(value => {
+        debug(...debugEvent(value));
+      }),
+    );
+  } catch (error) {
+    return Rx.throwError(error);
+  }
 };

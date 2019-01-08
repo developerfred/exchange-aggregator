@@ -69,46 +69,59 @@ interface KrakenResponse {
 }
 
 export const observeKraken = (options: Options) => {
-  const polling$ = Rx.interval(5000).pipe(
-    switchMap(() => {
-      const url = getHttpUrl(options);
-      return Rx.from(axios.get(url).then(result => result.data) as Promise<
-        KrakenResponse
-      >);
-    }),
-    map(
-      (data): Order[] => {
-        if (data.error && data.error.length) {
-          throw new Error('Error while trying to fetch the snapshot.');
+  try {
+    const url = getHttpUrl(options);
+    const polling$ = Rx.interval(5000).pipe(
+      switchMap(async () => {
+        const response = await axios
+          .get(url)
+          .then(value => value.data as KrakenResponse);
+
+        if (response.error && response.error.length) {
+          throw new Error(response.error.join(''));
         }
 
-        const key = `X${options.pair.base.symbol}X${options.pair.quote.symbol}`;
-        const orderbook = (data.result && data.result[key]) || {
-          asks: [],
-          bids: [],
-        };
-
-        return [].concat(
-          normalizeOrder(OrderType.ASK, orderbook.asks),
-          normalizeOrder(OrderType.BID, orderbook.bids),
-        );
-      },
-    ),
-    retryWhen(error => error.pipe(delay(10000))),
-    distinctUntilChanged(),
-  );
-
-  const orders$ = polling$.pipe(share());
-  return orders$.pipe(
-    map(
-      (orders): SnapshotMessage => ({
-        event: NormalizedMessageType.SNAPSHOT,
-        exchange: Exchange.KRAKEN,
-        orders,
+        return response.result;
       }),
-    ),
-    tap(value => {
-      debug(...debugEvent(value));
-    }),
-  );
+      retryWhen(error =>
+        error.pipe(
+          tap(error => debug(error)),
+          delay(10000),
+        ),
+      ),
+      map(
+        (result): Order[] => {
+          const key = `X${options.pair.base.symbol}X${
+            options.pair.quote.symbol
+          }`;
+          const orderbook: any = (result && result[key]) || {
+            asks: [],
+            bids: [],
+          };
+
+          return [].concat(
+            orderbook.asks.map(normalizeOrder(options, OrderType.ASK)),
+            orderbook.bids.map(normalizeOrder(options, OrderType.BID)),
+          );
+        },
+      ),
+      distinctUntilChanged(),
+    );
+
+    const orders$ = polling$.pipe(share());
+    return orders$.pipe(
+      map(
+        (orders: Order[]): SnapshotMessage => ({
+          event: NormalizedMessageType.SNAPSHOT,
+          exchange: Exchange.KRAKEN,
+          orders,
+        }),
+      ),
+      tap(value => {
+        debug(...debugEvent(value));
+      }),
+    );
+  } catch (error) {
+    return Rx.throwError(error);
+  }
 };

@@ -8,16 +8,18 @@ import { observeKraken } from './exchanges/kraken';
 import { observeKyber } from './exchanges/kyber';
 import { observeEthfinex } from './exchanges/ethfinex';
 import { createToken } from '@melonproject/token-math/token';
-// import { PriceIntTerface, toFixed } from '@melonproject/token-math/price';
+import { PriceInterface, toFixed } from '@melonproject/token-math/price';
 import { scan, tap, throttleTime } from 'rxjs/operators';
 import { aggregateOrderbook, initializeOrderbook } from './exchanges/aggregate';
 
 const debug = require('debug')('exchange-aggregator');
 
-// const displayPrice = (price: PriceInterface, decimals?: number) => {
-//   const value = toFixed(price, decimals);
-//   return `${value} ${price.quote.token.symbol}`;
-// };
+const displayPrice = (price: PriceInterface, decimals?: number) => {
+  const value = toFixed(price, decimals);
+  const base = price.base.token.symbol;
+  const quote = price.quote.token.symbol;
+  return `${value} ${base}/${quote}`;
+};
 
 export const exchangeOrderObservableCreators = {
   [Exchange.RADAR_RELAY]: (options: Options) => observeRadarRelay(options),
@@ -94,51 +96,52 @@ commander
         }),
         throttleTime(5000),
       )
-      .subscribe(orderbook => {
-        const style = {
-          head: ['ID', 'Exchange', 'Price'],
-          colWidths: [25, 15, 25],
-          chars: {
-            top: '═',
-            'top-mid': '╤',
-            'top-left': '╔',
-            'top-right': '╗',
-            bottom: '═',
-            'bottom-mid': '╧',
-            'bottom-left': '╚',
-            'bottom-right': '╝',
-            left: '║',
-            'left-mid': '╟',
-            mid: '─',
-            'mid-mid': '┼',
-            right: '║',
-            'right-mid': '╢',
-            middle: '│',
-          },
-        };
+      .subscribe(
+        orderbook => {
+          const style = {
+            head: ['ID', 'Exchange', 'Price'],
+            colWidths: [25, 15, 25],
+            chars: {
+              top: '═',
+              'top-mid': '╤',
+              'top-left': '╔',
+              'top-right': '╗',
+              bottom: '═',
+              'bottom-mid': '╧',
+              'bottom-left': '╚',
+              'bottom-right': '╝',
+              left: '║',
+              'left-mid': '╟',
+              mid: '─',
+              'mid-mid': '┼',
+              right: '║',
+              'right-mid': '╢',
+              middle: '│',
+            },
+          };
 
-        const bids = new Table(style);
-        orderbook.bids.forEach(value => {
-          // const price = displayPrice(value.trade);
-          const price = '???';
+          const bids = new Table(style);
+          orderbook.bids.forEach(value => {
+            const price = displayPrice(value.trade);
+            bids.push([value.id || '???', value.exchange, price]);
+          });
 
-          bids.push([value.id, value.exchange, price]);
-        });
+          const asks = new Table(style);
+          orderbook.asks.forEach(value => {
+            const price = displayPrice(value.trade);
+            asks.push([value.id || '???', value.exchange, price]);
+          });
 
-        const asks = new Table(style);
-        orderbook.asks.forEach(value => {
-          // const price = displayPrice(value.trade);
-          const price = '???';
+          console.log('Asks');
+          console.log(asks.toString());
 
-          asks.push([value.id, value.exchange, price]);
-        });
-
-        console.log('Bids');
-        console.log(bids.toString());
-
-        console.log('Asks');
-        console.log(asks.toString());
-      });
+          console.log('Bids');
+          console.log(bids.toString());
+        },
+        error => {
+          debug('Orderbook aggregation failed.', error);
+        },
+      );
 
     process.stdin.resume();
   });

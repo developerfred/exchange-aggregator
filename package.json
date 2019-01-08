@@ -36,9 +36,9 @@
     "bundle": "rollup -c",
     "clean": "rimraf lib && rimraf coverage",
     "dev": "ts-node-dev src/dev orders",
-    "format": "prettier --write src/**/*.ts",
-    "lint:prettier": "yarn prettier --list-different src/**/*.ts",
-    "lint:tslint": "tsc --noEmit && tslint src/**/*.ts",
+    "format": "prettier --write src/{*,**/*}.ts",
+    "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
+    "lint:tslint": "tsc --noEmit && tslint src/{*,**/*}.ts",
     "lint": "yarn lint:tslint && yarn lint:prettier",
     "snyk": "synk test",
     "test": "yarn jest",
@@ -68,7 +68,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/token-math": "^0.0.22",
+    "@melonproject/token-math": "^0.0.23",
     "@radarrelay/types": "^1.2.1",
     "axios": "^0.18.0",
     "isomorphic-ws": "^4.0.1",

@@ -50,56 +50,60 @@ const getWebsocketUrl = (options: Options) => {
 };
 
 export const observeEthfinex = (options: Options) => {
-  const open$ = new Rx.Subject();
-  const close$ = new Rx.Subject();
+  try {
+    const open$ = new Rx.Subject();
+    const close$ = new Rx.Subject();
+    const url = getWebsocketUrl(options);
 
-  const url = getWebsocketUrl(options);
-  const ws$ = webSocket({
-    WebSocketCtor: isomorphicWs,
-    closeObserver: close$,
-    openObserver: open$,
-    url,
-  });
+    const ws$ = webSocket({
+      WebSocketCtor: isomorphicWs,
+      closeObserver: close$,
+      openObserver: open$,
+      url,
+    });
 
-  ws$.next(subscribeMessage(options));
-  open$.subscribe(() => {
-    debug('Opening connection.');
-  });
+    ws$.next(subscribeMessage(options));
+    open$.subscribe(() => {
+      debug('Opening connection.');
+    });
 
-  close$.subscribe(() => {
-    debug('Closing connection.');
-  });
+    close$.subscribe(() => {
+      debug('Closing connection.');
+    });
 
-  const messages$ = ws$.pipe(
-    filter(R.is(Array)),
-    map(R.nth(1)),
-  );
+    const messages$ = ws$.pipe(
+      filter(R.is(Array)),
+      map(R.nth(1)),
+    );
 
-  const snapshots$ = messages$.pipe(
-    filter(
-      R.compose(
-        R.is(Array),
-        R.head,
+    const snapshots$ = messages$.pipe(
+      filter(
+        R.compose(
+          R.is(Array),
+          R.head,
+        ),
       ),
-    ),
-    map(normalizeSnapshotEvent(options)),
-  );
+      map(normalizeSnapshotEvent(options)),
+    );
 
-  const updates$ = messages$.pipe(
-    filter(
-      R.compose(
-        R.is(Number),
-        R.head,
+    const updates$ = messages$.pipe(
+      filter(
+        R.compose(
+          R.is(Number),
+          R.head,
+        ),
       ),
-    ),
-    map(normalizeOrderEvent(options)),
-  );
+      map(normalizeOrderEvent(options)),
+    );
 
-  return Rx.merge(snapshots$, updates$).pipe(
-    tap(value => {
-      debug(...debugEvent(value as any));
-    }),
-  );
+    return Rx.merge(snapshots$, updates$).pipe(
+      tap(value => {
+        debug(...debugEvent(value as any));
+      }),
+    );
+  } catch (error) {
+    return Rx.throwError(error);
+  }
 };
 
 const normalizeOrderEvent = R.curryN(
@@ -110,7 +114,6 @@ const normalizeOrderEvent = R.curryN(
     const volume = Math.abs(parseFloat((amount as any) as string));
     const type = amount > 0 ? OrderType.BID : OrderType.ASK;
 
-    console.log(price, volume);
     // TODO: Figure out the right formula here.
     const trade = createPrice(
       createQuantity(options.pair.base, parseFloat((price as any) as string)),
@@ -142,8 +145,8 @@ const normalizeSnapshotEvent = R.curryN(
         return price !== 0;
       })
       .map(([id, price, amount]) => {
-        const volume = Math.abs(parseFloat((amount as any) as string));
         const type = amount > 0 ? OrderType.BID : OrderType.ASK;
+        const volume = Math.abs(parseFloat((amount as any) as string));
 
         // TODO: Figure out the right formula here.
         const trade = createPrice(

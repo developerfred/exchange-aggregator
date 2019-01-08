@@ -64,6 +64,10 @@ const getRateHttpUrl = (
   currency: string,
   interval: number[],
 ) => {
+  if (options.network !== Network.MAINNET) {
+    throw new Error('Kyber only supports the MAINNET network.');
+  }
+
   const prefix = `https://api.kyber.network/${type}_rate`;
   const splits = R.splitEvery(5, interval);
   const suffix = splits
@@ -78,52 +82,41 @@ const getRateHttpUrl = (
     })
     .join('&');
 
-  switch (options.network) {
-    case Network.MAINNET:
-      return `${prefix}?${suffix}`;
-    default:
-      throw new Error('Kyber only supports the MAINNET network.');
-  }
+  return `${prefix}?${suffix}`;
 };
 
-export const observeKyber = (options: Options) => {
-  if (options.pair.quote.symbol !== 'ETH') {
-    throw new Error('Kyber only support ETH as a quote token.');
+const formatResponse = (
+  options: Options,
+  type: OrderType,
+  response: KyberRateResponse,
+) => {
+  if (response.error) {
+    throw new Error(`Error trying to fetch Kyber ${type} rates.`);
   }
 
-  const currencies$ = Rx.defer(() => {
-    const url = getCurrenciesHttpUrl(options);
-    const request = axios.get(url).then(result => result.data);
-    return Rx.from(request as Promise<KyberCurrenciesResponse>);
-  }).pipe(map(result => result.data));
+  const volumeKey = type === OrderType.ASK ? 'dst_qty' : 'src_qty';
+  const priceKey = type === OrderType.ASK ? 'src_qty' : 'dst_qty';
+  const groups = response.data.map(current => {
+    return Object.keys(current[volumeKey] as any).map(index => {
+      // TODO: Is this correct?
+      const price = createPrice(
+        createQuantity(options.pair.base, current[priceKey][index]),
+        createQuantity(options.pair.quote, current[volumeKey][index]),
+      );
 
-  const formatResponse = (type: OrderType, response: KyberRateResponse) => {
-    if (response.error) {
-      throw new Error(`Error trying to fetch Kyber ${type} rates.`);
-    }
-
-    const volumeKey = type === OrderType.ASK ? 'dst_qty' : 'src_qty';
-    const priceKey = type === OrderType.ASK ? 'src_qty' : 'dst_qty';
-    const groups = response.data.map(current => {
-      return Object.keys(current[volumeKey] as any).map(index => {
-        // TODO: Is this correct?
-        const price = createPrice(
-          createQuantity(options.pair.base, current[priceKey][index]),
-          createQuantity(options.pair.quote, current[volumeKey][index]),
-        );
-
-        return {
-          type,
-          exchange: Exchange.KYBER,
-          trade: price,
-        };
-      });
+      return {
+        type,
+        exchange: Exchange.KYBER,
+        trade: price,
+      };
     });
+  });
 
-    return [].concat(...groups) as Order[];
-  };
+  return [].concat(...groups) as Order[];
+};
 
-  const pollRate = (currencies: Currency[]) => {
+const pollRate = R.curryN(2, (options: Options, currencies: Currency[]) => {
+  try {
     const base = options.pair.base.symbol;
     const quote = options.pair.quote.symbol;
     const currency = currencies.find(R.propEq('symbol', base));
@@ -133,13 +126,14 @@ export const observeKyber = (options: Options) => {
 
     // TODO: Pass the interval through configuration.
     const interval = [1, 10, 20, 30, 40, 50, 75, 100, 125, 150];
+    const buyUrl = getRateHttpUrl(options, 'buy', currency.id, interval);
+    const sellUrl = getRateHttpUrl(options, 'sell', currency.id, interval);
+
     return Rx.interval(5000).pipe(
       tap(() => {
         debug(`Loading snapshot for market %s-%s.`, base, quote);
       }),
-      switchMap(() => {
-        const buyUrl = getRateHttpUrl(options, 'buy', currency.id, interval);
-        const sellUrl = getRateHttpUrl(options, 'sell', currency.id, interval);
+      switchMap(async () => {
         const sellRequest = axios
           .get(sellUrl)
           .then(result => result.data) as Promise<KyberRateResponse>;
@@ -147,31 +141,73 @@ export const observeKyber = (options: Options) => {
           .get(buyUrl)
           .then(result => result.data) as Promise<KyberRateResponse>;
 
-        return Rx.from(Promise.all([buyRequest, sellRequest]));
+        const [buyResponse, sellResponse] = await Promise.all([
+          buyRequest,
+          sellRequest,
+        ]);
+
+        return [buyResponse, sellResponse];
       }),
+      retryWhen(error =>
+        error.pipe(
+          tap(error => debug(error)),
+          delay(10000),
+        ),
+      ),
       distinctUntilChanged(),
       map(
         ([buyResponse, sellResponse]): Order[] =>
           [].concat(
-            formatResponse(OrderType.BID, buyResponse),
-            formatResponse(OrderType.ASK, sellResponse),
+            formatResponse(options, OrderType.BID, buyResponse),
+            formatResponse(options, OrderType.ASK, sellResponse),
           ),
       ),
-      retryWhen(error => error.pipe(delay(10000))),
     );
-  };
+  } catch (error) {
+    return Rx.throwError(error);
+  }
+});
 
-  const rates$ = currencies$.pipe(switchMap(pollRate));
-  return rates$.pipe(
-    map(
-      (orders): SnapshotMessage => ({
-        event: NormalizedMessageType.SNAPSHOT,
-        exchange: Exchange.KYBER,
-        orders,
+export const observeKyber = (options: Options) => {
+  try {
+    if (options.pair.quote.symbol !== 'ETH') {
+      throw new Error('Kyber only support ETH as a quote token.');
+    }
+
+    const url = getCurrenciesHttpUrl(options);
+    const currencies$ = Rx.defer(async () => {
+      const response = await axios
+        .get(url)
+        .then(result => result.data as KyberCurrenciesResponse);
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      return response.data;
+    }).pipe(
+      retryWhen(error =>
+        error.pipe(
+          tap(error => debug(error)),
+          delay(10000),
+        ),
+      ),
+    );
+
+    const rates$ = currencies$.pipe(switchMap(pollRate(options)));
+    return rates$.pipe(
+      map(
+        (orders: Order[]): SnapshotMessage => ({
+          event: NormalizedMessageType.SNAPSHOT,
+          exchange: Exchange.KYBER,
+          orders,
+        }),
+      ),
+      tap(value => {
+        debug(...debugEvent(value));
       }),
-    ),
-    tap(value => {
-      debug(...debugEvent(value));
-    }),
-  );
+    );
+  } catch (error) {
+    return Rx.throwError(error);
+  }
 };

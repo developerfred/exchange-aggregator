@@ -10,6 +10,8 @@ import {
   AddOrUpdateOrderMessage,
 } from '../types';
 import { TokenInterface } from '@melonproject/token-math/token';
+import { toAtomic } from '@melonproject/token-math/price';
+import { subtract } from '@melonproject/token-math/bigInteger';
 
 export interface Orderbook {
   quote: TokenInterface;
@@ -27,6 +29,12 @@ export const initializeOrderbook = (options: Options) => ({
   asks: [],
 });
 
+const sortOrders = (a: Order, b: Order) => {
+  const priceA = toAtomic(a.trade);
+  const priceB = toAtomic(b.trade);
+  return parseInt(subtract(priceB, priceA).toString(), 10);
+};
+
 export const aggregateOrderbook = (
   carry: Orderbook,
   current: OrderMessage | SnapshotMessage,
@@ -39,10 +47,14 @@ export const aggregateOrderbook = (
 
     return {
       ...carry,
-      bids: carry.bids.filter(item => item.exchange !== exchange).concat(bids),
-      // .sort(sortBids), // TODO: Add sorting.
-      asks: carry.asks.filter(item => item.exchange !== exchange).concat(asks),
-      // .sort(sortAsks), // TODO: Add sorting.
+      bids: carry.bids
+        .filter(item => item.exchange !== exchange)
+        .concat(bids)
+        .sort(sortOrders),
+      asks: carry.asks
+        .filter(item => item.exchange !== exchange)
+        .concat(asks)
+        .sort(sortOrders),
     };
   }
 
@@ -57,15 +69,15 @@ export const aggregateOrderbook = (
           ? carry.asks
               .filter(item => !(item.id === id && item.exchange === exchange))
               .concat([order])
-          : // .sort(sortBids), // TODO: Add sorting.
-            carry.asks,
+              .sort(sortOrders)
+          : carry.asks,
       bids:
         order.type === OrderType.BID
           ? carry.bids
               .filter(item => !(item.id === id && item.exchange === exchange))
               .concat([order])
-          : // .sort(sortAsks), // TODO: Add sorting.
-            carry.bids,
+              .sort(sortOrders)
+          : carry.bids,
     };
   }
 
