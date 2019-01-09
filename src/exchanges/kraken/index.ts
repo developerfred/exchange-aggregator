@@ -39,17 +39,24 @@ const getHttpUrl = (options: Options) => {
 
 const normalizeOrder = R.curryN(
   3,
-  (options: Options, type: OrderType, order: any): Order => {
-    // TODO: Figure out the right formula here.
-    const price = createPrice(
-      createQuantity(options.pair.base, parseFloat(order[0])),
-      createQuantity(options.pair.quote, parseFloat(order[1])),
+  (
+    options: Options,
+    type: OrderType,
+    [price, volume, timestamp]: [number, number, number],
+  ): Order => {
+    const oid = Buffer.from(
+      `${Exchange.KRAKEN}:${price}:${volume}:${timestamp}`,
+    ).toString('base64');
+    const trade = createPrice(
+      createQuantity(options.pair.base, volume),
+      createQuantity(options.pair.quote, price * volume),
     );
 
     return {
+      id: oid,
       type,
       exchange: Exchange.KRAKEN,
-      trade: price,
+      trade,
     };
   },
 );

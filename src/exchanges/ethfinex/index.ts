@@ -110,25 +110,23 @@ const normalizeOrderEvent = R.curryN(
   2,
   (options: Options, order: [number, number, number]) => {
     const [id, price, amount] = order;
-
-    const volume = Math.abs(parseFloat((amount as any) as string));
+    const oid = Buffer.from(`${Exchange.ETHFINEX}:${id}`).toString('base64');
+    const volume = Math.abs(amount);
     const type = amount > 0 ? OrderType.BID : OrderType.ASK;
-
-    // TODO: Figure out the right formula here.
     const trade = createPrice(
-      createQuantity(options.pair.base, parseFloat((price as any) as string)),
-      createQuantity(options.pair.quote, volume),
+      createQuantity(options.pair.base, volume),
+      createQuantity(options.pair.quote, price * volume),
     );
 
     const event =
       price === 0 ? NormalizedMessageType.REMOVE : NormalizedMessageType.ADD;
 
     return {
-      id: (id as any) as string,
+      id: oid,
       event,
       exchange: Exchange.ETHFINEX,
       order: {
-        id: (id as any) as string,
+        id: oid,
         type,
         trade,
         exchange: Exchange.ETHFINEX,
@@ -145,20 +143,18 @@ const normalizeSnapshotEvent = R.curryN(
         return price !== 0;
       })
       .map(([id, price, amount]) => {
+        const oid = Buffer.from(`${Exchange.ETHFINEX}:${id}`).toString(
+          'base64',
+        );
+        const volume = Math.abs(amount);
         const type = amount > 0 ? OrderType.BID : OrderType.ASK;
-        const volume = Math.abs(parseFloat((amount as any) as string));
-
-        // TODO: Figure out the right formula here.
         const trade = createPrice(
-          createQuantity(
-            options.pair.base,
-            parseFloat((price as any) as string),
-          ),
-          createQuantity(options.pair.quote, volume),
+          createQuantity(options.pair.base, volume),
+          createQuantity(options.pair.quote, price * volume),
         );
 
         return {
-          id: (id as any) as string,
+          id: oid,
           type,
           trade,
           exchange: Exchange.ETHFINEX,

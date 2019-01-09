@@ -9,6 +9,7 @@ import { observeKyber } from './exchanges/kyber';
 import { observeEthfinex } from './exchanges/ethfinex';
 import { createToken } from '@melonproject/token-math/token';
 import { PriceInterface, toFixed } from '@melonproject/token-math/price';
+import { toFixed as toFixedQuantity } from '@melonproject/token-math/quantity';
 import { scan, tap, throttleTime } from 'rxjs/operators';
 import { aggregateOrderbook, initializeOrderbook } from './exchanges/aggregate';
 
@@ -21,10 +22,16 @@ const displayPrice = (price: PriceInterface, decimals?: number) => {
   return `${value} ${base}/${quote}`;
 };
 
+const displayVolume = (price: PriceInterface) => {
+  const base = price.base.token.symbol;
+  const quantity = toFixedQuantity(price.base);
+  return `${quantity} ${base}`;
+};
+
 export const exchangeOrderObservableCreators = {
   [Exchange.RADAR_RELAY]: (options: Options) => observeRadarRelay(options),
   [Exchange.KRAKEN]: (options: Options) => observeKraken(options),
-  [Exchange.KYBER]: (options: Options) => observeKyber(options),
+  [Exchange.KYBER_NETWORK]: (options: Options) => observeKyber(options),
   [Exchange.ETHFINEX]: (options: Options) => observeEthfinex(options),
 };
 
@@ -99,8 +106,8 @@ commander
       .subscribe(
         orderbook => {
           const style = {
-            head: ['ID', 'Exchange', 'Price'],
-            colWidths: [25, 15, 25],
+            head: ['ID', 'Exchange', 'Price', 'Volume'],
+            colWidths: [25, 15, 25, 25],
             chars: {
               top: '═',
               'top-mid': '╤',
@@ -123,13 +130,15 @@ commander
           const bids = new Table(style);
           orderbook.bids.forEach(value => {
             const price = displayPrice(value.trade);
-            bids.push([value.id || '???', value.exchange, price]);
+            const volume = displayVolume(value.trade);
+            bids.push([value.id || '???', value.exchange, price, volume]);
           });
 
           const asks = new Table(style);
           orderbook.asks.forEach(value => {
             const price = displayPrice(value.trade);
-            asks.push([value.id || '???', value.exchange, price]);
+            const volume = displayVolume(value.trade);
+            asks.push([value.id || '???', value.exchange, price, volume]);
           });
 
           console.log('Asks');

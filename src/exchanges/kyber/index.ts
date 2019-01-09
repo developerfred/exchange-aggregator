@@ -94,20 +94,25 @@ const formatResponse = (
     throw new Error(`Error trying to fetch Kyber ${type} rates.`);
   }
 
-  const volumeKey = type === OrderType.ASK ? 'dst_qty' : 'src_qty';
-  const priceKey = type === OrderType.ASK ? 'src_qty' : 'dst_qty';
+  const volumeKey = type === OrderType.ASK ? 'src_qty' : 'dst_qty';
+  const priceKey = type === OrderType.ASK ? 'dst_qty' : 'src_qty';
   const groups = response.data.map(current => {
     return Object.keys(current[volumeKey] as any).map(index => {
-      // TODO: Is this correct?
-      const price = createPrice(
-        createQuantity(options.pair.base, current[priceKey][index]),
-        createQuantity(options.pair.quote, current[volumeKey][index]),
+      const volume = current[volumeKey][index];
+      const price = current[priceKey][index];
+      const oid = Buffer.from(`${Exchange.KYBER_NETWORK}:${volume}`).toString(
+        'base64',
+      );
+      const trade = createPrice(
+        createQuantity(options.pair.base, volume),
+        createQuantity(options.pair.quote, price),
       );
 
       return {
+        id: oid,
         type,
-        exchange: Exchange.KYBER,
-        trade: price,
+        exchange: Exchange.KYBER_NETWORK,
+        trade,
       };
     });
   });
@@ -125,7 +130,7 @@ const pollRate = R.curryN(2, (options: Options, currencies: Currency[]) => {
     }
 
     // TODO: Pass the interval through configuration.
-    const interval = [1, 10, 20, 30, 40, 50, 75, 100, 125, 150];
+    const interval = [1, 10, 100, 1000];
     const buyUrl = getRateHttpUrl(options, 'buy', currency.id, interval);
     const sellUrl = getRateHttpUrl(options, 'sell', currency.id, interval);
 
@@ -199,7 +204,7 @@ export const observeKyber = (options: Options) => {
       map(
         (orders: Order[]): SnapshotMessage => ({
           event: NormalizedMessageType.SNAPSHOT,
-          exchange: Exchange.KYBER,
+          exchange: Exchange.KYBER_NETWORK,
           orders,
         }),
       ),

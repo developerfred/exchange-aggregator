@@ -32,7 +32,16 @@ export const initializeOrderbook = (options: Options) => ({
 const sortOrders = (a: Order, b: Order) => {
   const priceA = toAtomic(a.trade);
   const priceB = toAtomic(b.trade);
-  return parseInt(subtract(priceB, priceA).toString(), 10);
+  const difference = parseFloat(subtract(priceB, priceA).toString());
+
+  // Sort by volumes if prices are identical.
+  if (difference === 0) {
+    const quantityA = a.trade.base.quantity;
+    const quantityB = b.trade.base.quantity;
+    return parseFloat(subtract(quantityB, quantityA).toString());
+  }
+
+  return difference;
 };
 
 export const aggregateOrderbook = (
@@ -60,21 +69,21 @@ export const aggregateOrderbook = (
 
   if (current.event === NormalizedMessageType.ADD) {
     const add = current as AddOrUpdateOrderMessage;
-    const { id, exchange, order } = add;
+    const { id, order } = add;
 
     return {
       ...carry,
       asks:
         order.type === OrderType.ASK
           ? carry.asks
-              .filter(item => !(item.id === id && item.exchange === exchange))
+              .filter(item => item.id !== id)
               .concat([order])
               .sort(sortOrders)
           : carry.asks,
       bids:
         order.type === OrderType.BID
           ? carry.bids
-              .filter(item => !(item.id === id && item.exchange === exchange))
+              .filter(item => item.id !== id)
               .concat([order])
               .sort(sortOrders)
           : carry.bids,
@@ -83,16 +92,12 @@ export const aggregateOrderbook = (
 
   if (current.event === NormalizedMessageType.REMOVE) {
     const remove = current as RemoveOrderMessage;
-    const { id, exchange } = remove;
+    const { id } = remove;
 
     return {
       ...carry,
-      asks: carry.asks.filter(
-        order => !(order.id === id && order.exchange === exchange),
-      ),
-      bids: carry.bids.filter(
-        order => !(order.id === id && order.exchange === exchange),
-      ),
+      asks: carry.asks.filter(order => order.id !== id),
+      bids: carry.bids.filter(order => order.id !== id),
     };
   }
 

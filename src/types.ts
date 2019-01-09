@@ -4,7 +4,7 @@ import { TokenInterface } from '@melonproject/token-math/token';
 export enum Exchange {
   'RADAR_RELAY' = 'RADAR_RELAY',
   'KRAKEN' = 'KRAKEN',
-  'KYBER' = 'KYBER',
+  'KYBER_NETWORK' = 'KYBER_NETWORK',
   'ETHFINEX' = 'ETHFINEX',
 }
 
@@ -28,7 +28,7 @@ export interface Order {
   exchange: Exchange;
   type: OrderType;
   trade: PriceInterface;
-  metadata?: any;
+  original?: any;
 }
 
 export enum NormalizedMessageType {

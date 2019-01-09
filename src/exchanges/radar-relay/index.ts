@@ -41,7 +41,7 @@ interface SubscribeMessage {
   requestId: number;
 }
 
-interface UnSubscribeMessage {
+interface UnsubscribeMessage {
   type: WebsocketRequestType.UNSUBSCRIBE;
   topic: WebsocketRequestTopic.BOOK;
   market: string;
@@ -60,10 +60,10 @@ const subscribeMessage = (options: Options, id: number) => {
   return message;
 };
 
-const unSubscribeMessage = (options: Options) => {
+const unsubscribeMessage = (options: Options) => {
   const baseToken = cleanToken(options.pair.base.symbol);
   const quoteToken = cleanToken(options.pair.quote.symbol);
-  const message: UnSubscribeMessage = {
+  const message: UnsubscribeMessage = {
     type: WebsocketRequestType.UNSUBSCRIBE,
     topic: WebsocketRequestTopic.BOOK,
     market: `${baseToken}-${quoteToken}`,
@@ -75,42 +75,53 @@ const unSubscribeMessage = (options: Options) => {
 const normalizeOrder = R.curryN(
   2,
   (options: Options, order: RadarSignedOrder): Order => {
+    const oid = Buffer.from(order.orderHash).toString('base64');
     const base = parseFloat((order.remainingBaseTokenAmount as any) as string);
     const quote = parseFloat(
       (order.remainingQuoteTokenAmount as any) as string,
     );
+
     const price = createPrice(
       createQuantity(options.pair.base, base),
       createQuantity(options.pair.quote, quote),
     );
 
     return {
-      id: order.orderHash,
+      id: oid,
       type: (order.type as any) as OrderType,
       exchange: Exchange.RADAR_RELAY,
       trade: price,
+      original: order,
     };
   },
 );
 
 const normalizeNewOrderEvent = R.curryN(
   2,
-  (options: Options, event: RadarNewOrder): AddOrUpdateOrderMessage => ({
-    event: NormalizedMessageType.ADD,
-    exchange: Exchange.RADAR_RELAY,
-    id: event.order.orderHash,
-    order: normalizeOrder(options, event.order),
-  }),
+  (options: Options, event: RadarNewOrder): AddOrUpdateOrderMessage => {
+    const oid = Buffer.from(event.order.orderHash).toString('base64');
+
+    return {
+      id: oid,
+      event: NormalizedMessageType.ADD,
+      exchange: Exchange.RADAR_RELAY,
+      order: normalizeOrder(options, event.order),
+    };
+  },
 );
 
 const normalizeFillOrderEvent = R.curryN(
   2,
-  (options: Options, event: RadarFillOrder): AddOrUpdateOrderMessage => ({
-    event: NormalizedMessageType.ADD,
-    exchange: Exchange.RADAR_RELAY,
-    id: event.order.orderHash,
-    order: normalizeOrder(options, event.order),
-  }),
+  (options: Options, event: RadarFillOrder): AddOrUpdateOrderMessage => {
+    const oid = Buffer.from(event.order.orderHash).toString('base64');
+
+    return {
+      id: oid,
+      event: NormalizedMessageType.ADD,
+      exchange: Exchange.RADAR_RELAY,
+      order: normalizeOrder(options, event.order),
+    };
+  },
 );
 
 const normalizeCancelOrderEvent = (
@@ -274,7 +285,7 @@ export const observeRadarRelay = (options: Options) => {
     const ws$ = getWebsocketConnection(options);
     const socket$ = ws$.multiplex(
       () => subscribeMessage(options, id),
-      () => unSubscribeMessage(options),
+      () => unsubscribeMessage(options),
       R.propEq('requestId', id),
     );
 
