@@ -48,8 +48,8 @@ interface UnsubscribeMessage {
 }
 
 const subscribeMessage = (options: Options, id: number) => {
-  const baseToken = cleanToken(options.pair.base.symbol);
-  const quoteToken = cleanToken(options.pair.quote.symbol);
+  const baseToken = options.pair.base.symbol;
+  const quoteToken = options.pair.quote.symbol;
   const message: SubscribeMessage = {
     type: WebsocketRequestType.SUBSCRIBE,
     topic: WebsocketRequestTopic.BOOK,
@@ -61,8 +61,8 @@ const subscribeMessage = (options: Options, id: number) => {
 };
 
 const unsubscribeMessage = (options: Options) => {
-  const baseToken = cleanToken(options.pair.base.symbol);
-  const quoteToken = cleanToken(options.pair.quote.symbol);
+  const baseToken = options.pair.base.symbol;
+  const quoteToken = options.pair.quote.symbol;
   const message: UnsubscribeMessage = {
     type: WebsocketRequestType.UNSUBSCRIBE,
     topic: WebsocketRequestTopic.BOOK,
@@ -250,18 +250,9 @@ const getWebsocketUrl = (options: Options) => {
   }
 };
 
-const cleanToken = (token: string) => {
-  switch (token) {
-    case 'ETH':
-      return 'WETH';
-    default:
-      return token;
-  }
-};
-
 const getHttpUrl = (options: Options) => {
-  const base = cleanToken(options.pair.base.symbol);
-  const quote = cleanToken(options.pair.quote.symbol);
+  const base = options.pair.base.symbol;
+  const quote = options.pair.quote.symbol;
 
   switch (options.network) {
     case Network.KOVAN: {

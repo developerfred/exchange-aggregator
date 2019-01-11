@@ -27,9 +27,18 @@ interface SubscribeMessage {
   len?: 25 | 100;
 }
 
+const cleanToken = (token: string) => {
+  switch (token) {
+    case 'WETH':
+      return 'ETH';
+    default:
+      return token;
+  }
+};
+
 const subscribeMessage = (options: Options) => {
-  const base = options.pair.base.symbol;
-  const quote = options.pair.quote.symbol;
+  const base = cleanToken(options.pair.base.symbol);
+  const quote = cleanToken(options.pair.quote.symbol);
   const message: SubscribeMessage = {
     event: 'subscribe',
     channel: 'book',
