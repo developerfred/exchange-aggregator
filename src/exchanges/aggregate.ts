@@ -44,7 +44,21 @@ const sortOrders = (a: Order, b: Order) => {
   return difference;
 };
 
-export const aggregateOrderbook = (
+export const aggregateOrderbookFromOrders = (
+  carry: Orderbook,
+  current: Order[],
+) => {
+  const bids = current.filter(order => order.type === OrderType.BID);
+  const asks = current.filter(order => order.type === OrderType.ASK);
+
+  return {
+    ...carry,
+    bids: carry.bids.concat(bids).sort(sortOrders),
+    asks: carry.asks.concat(asks).sort(sortOrders),
+  };
+};
+
+export const aggregateOrderbookFromEvents = (
   carry: Orderbook,
   current: OrderMessage | SnapshotMessage,
 ) => {

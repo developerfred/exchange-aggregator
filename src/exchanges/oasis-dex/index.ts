@@ -6,7 +6,7 @@ import { QuantityInterface } from '@melonproject/token-math/quantity';
 
 // const debug = require('debug')('exchange-aggregator:oasis-dex');
 
-interface OasisDexOptions extends Options {
+export interface OasisDexOptions extends Options {
   environment: Environment;
 }
 
@@ -16,31 +16,17 @@ interface OasisDexOrder {
   sell: QuantityInterface;
 }
 
+const exchangePath = ['thirdPartyContracts', 'exchanges', 'matchingMarket'];
+
+const contractPath = ['melonContracts', 'adapters', 'matchingMarketAccessor'];
+
 export const fetchOasisDexOrders = async (
   options: OasisDexOptions,
 ): Promise<Order[]> => {
-  const environment: Environment = R.prop('environment', options);
-  const contract: string = R.path(
-    [
-      'environment',
-      'deployment',
-      'melonContracts',
-      'adapters',
-      'matchingMarketAccessor',
-    ],
-    options,
-  );
-
-  const exchange: string = R.path(
-    [
-      'environment',
-      'deployment',
-      'thirdPartyContracts',
-      'exchanges',
-      'matchingMarket',
-    ],
-    options,
-  );
+  const environment = options.environment;
+  const deployment = environment.deployment;
+  const contract = R.path(contractPath, deployment);
+  const exchange = R.path(exchangePath, deployment);
 
   const bidsCall = getActiveOasisDexOrders(environment, contract, {
     targetExchange: exchange.toString(),
@@ -58,8 +44,11 @@ export const fetchOasisDexOrders = async (
 
   const bids = bidsResponse.map(
     (order: OasisDexOrder): Order => {
+      const key = `${Exchange.OASIS_DEX}:${OrderType.BID}:${order.id}`;
+      const id = Buffer.from(key).toString('base64');
+
       return {
-        id: Buffer.from(`${Exchange.OASIS_DEX}:${order.id}`).toString('base64'),
+        id,
         type: OrderType.BID,
         exchange: Exchange.OASIS_DEX,
         trade: createPrice(order.buy, order.sell),
@@ -69,22 +58,17 @@ export const fetchOasisDexOrders = async (
 
   const asks = asksResponse.map(
     (order: OasisDexOrder): Order => {
+      const key = `${Exchange.OASIS_DEX}:${OrderType.ASK}:${order.id}`;
+      const id = Buffer.from(key).toString('base64');
+
       return {
-        id: Buffer.from(`${Exchange.OASIS_DEX}:${order.id}`).toString('base64'),
+        id,
         type: OrderType.ASK,
         exchange: Exchange.OASIS_DEX,
         trade: createPrice(order.sell, order.buy),
       };
     },
   );
-
-  console.log({
-    targetExchange: exchange,
-    sellAsset: options.pair.base.address,
-    buyAsset: options.pair.quote.address,
-  });
-
-  console.log(bids, asks);
 
   return [].concat(bids, asks);
 };

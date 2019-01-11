@@ -25,7 +25,7 @@ export interface Options {
 }
 
 export interface Order {
-  id?: string;
+  id: string;
   exchange: Exchange;
   type: OrderType;
   trade: PriceInterface;

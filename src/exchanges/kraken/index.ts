@@ -25,18 +25,11 @@ import { debugEvent } from '../debug';
 
 const debug = require('debug')('exchange-aggregator:kraken');
 
-const cleanToken = (token: string) => {
-  switch (token) {
-    case 'WETH':
-      return 'ETH';
-    default:
-      return token;
-  }
-};
+const wethToEth = (token: string) => token.replace(/^WETH$/, 'ETH');
 
 const getHttpUrl = (options: Options) => {
-  const base = cleanToken(options.pair.base.symbol);
-  const quote = cleanToken(options.pair.quote.symbol);
+  const base = wethToEth(options.pair.base.symbol);
+  const quote = wethToEth(options.pair.quote.symbol);
 
   switch (options.network) {
     case Network.MAINNET:

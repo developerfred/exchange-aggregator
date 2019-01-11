@@ -1,5 +1,6 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
+import axios from 'axios';
 import { tap, filter, map } from 'rxjs/operators';
 import { webSocket } from 'rxjs/webSocket';
 import isomorphicWs from 'isomorphic-ws';
@@ -8,16 +9,22 @@ import {
   Options,
   OrderType,
   Exchange,
-  Order,
   RemoveOrderMessage,
   NormalizedMessageType,
   SnapshotMessage,
+  Order,
 } from '../../types';
 import { createPrice } from '@melonproject/token-math/price';
 import { createQuantity } from '@melonproject/token-math/quantity';
 import { debugEvent } from '../debug';
 
 const debug = require('debug')('exchange-aggregator:ethfinex');
+
+export interface EthfinexOptions extends Options {
+  // Nothing to extend for now.
+}
+
+type EthfinexOrder = [number, number, number];
 
 interface SubscribeMessage {
   event: 'subscribe';
@@ -27,18 +34,11 @@ interface SubscribeMessage {
   len?: 25 | 100;
 }
 
-const cleanToken = (token: string) => {
-  switch (token) {
-    case 'WETH':
-      return 'ETH';
-    default:
-      return token;
-  }
-};
+const wethToEth = (token: string) => token.replace(/^WETH$/, 'ETH');
 
-const subscribeMessage = (options: Options) => {
-  const base = cleanToken(options.pair.base.symbol);
-  const quote = cleanToken(options.pair.quote.symbol);
+const subscribeMessage = (options: EthfinexOptions) => {
+  const base = wethToEth(options.pair.base.symbol);
+  const quote = wethToEth(options.pair.quote.symbol);
   const message: SubscribeMessage = {
     event: 'subscribe',
     channel: 'book',
@@ -49,16 +49,83 @@ const subscribeMessage = (options: Options) => {
   return message;
 };
 
-const getWebsocketUrl = (options: Options) => {
+const getWebsocketUrl = (options: EthfinexOptions) => {
   switch (options.network) {
     case Network.MAINNET:
-      return 'wss://api.bitfinex.com/ws/2';
+      return 'wss://api.ethfinex.com/ws/2';
     default:
       throw new Error('Ethfinex only supports the MAINNET network.');
   }
 };
 
-export const observeEthfinex = (options: Options) => {
+const getHttpUrl = (options: EthfinexOptions) => {
+  const base = wethToEth(options.pair.base.symbol);
+  const quote = wethToEth(options.pair.quote.symbol);
+
+  switch (options.network) {
+    case Network.MAINNET:
+      return `https://api.ethfinex.com/v2/book/t${base}${quote}/R0`;
+    default:
+      throw new Error('Ethfinex only supports the MAINNET network.');
+  }
+};
+
+const normalizeOrder = (options: EthfinexOptions, order: EthfinexOrder) => {
+  const [id, price, amount] = order;
+  const key = `${Exchange.ETHFINEX}:${id}`;
+  const volume = Math.abs(amount);
+
+  return {
+    id: Buffer.from(key).toString('base64'),
+    type: amount > 0 ? OrderType.BID : OrderType.ASK,
+    exchange: Exchange.ETHFINEX,
+    trade: createPrice(
+      createQuantity(options.pair.base, volume),
+      createQuantity(options.pair.quote, price * volume),
+    ),
+  } as Order;
+};
+
+const normalizeOrderEvent = (
+  options: EthfinexOptions,
+  order: EthfinexOrder,
+) => {
+  const [, price] = order;
+  const normalized = normalizeOrder(options, order);
+  const event =
+    price === 0 ? NormalizedMessageType.REMOVE : NormalizedMessageType.ADD;
+
+  return {
+    id: normalized.id,
+    event,
+    exchange: Exchange.ETHFINEX,
+    order: normalized,
+  } as RemoveOrderMessage;
+};
+
+const normalizeSnapshotEvent = (
+  options: EthfinexOptions,
+  orders: EthfinexOrder[],
+) => {
+  const processed = orders
+    .filter(([, price]) => price !== 0)
+    .map(order => normalizeOrder(options, order));
+
+  return {
+    event: NormalizedMessageType.SNAPSHOT,
+    exchange: Exchange.ETHFINEX,
+    orders: processed,
+  } as SnapshotMessage;
+};
+
+export const fetchEtfinexOrders = async (
+  options: EthfinexOptions,
+): Promise<Order[]> => {
+  const { data } = await axios.get(getHttpUrl(options));
+  return data.map((order: EthfinexOrder) => normalizeOrder(options, order));
+};
+
+export const observeEthfinex = (options: EthfinexOptions) => {
   try {
     const open$ = new Rx.Subject();
     const close$ = new Rx.Subject();
@@ -81,28 +148,26 @@ export const observeEthfinex = (options: Options) => {
     });
 
     const messages$ = ws$.pipe(
-      filter(R.is(Array)),
+      filter(R.is(Array) as (
+        payload: any,
+      ) => payload is [number, EthfinexOrder | EthfinexOrder[]]),
       map(R.nth(1)),
     );
 
     const snapshots$ = messages$.pipe(
-      filter(
-        R.compose(
-          R.is(Array),
-          R.head,
-        ),
-      ),
-      map(normalizeSnapshotEvent(options)),
+      filter(R.compose(
+        R.is(Array),
+        R.head,
+      ) as (payload: any) => payload is EthfinexOrder[]),
+      map(orders => normalizeSnapshotEvent(options, orders)),
     );
 
     const updates$ = messages$.pipe(
-      filter(
-        R.compose(
-          R.is(Number),
-          R.head,
-        ),
-      ),
-      map(normalizeOrderEvent(options)),
+      filter(R.compose(
+        R.is(Number),
+        R.head,
+      ) as (payload: any) => payload is EthfinexOrder),
+      map(order => normalizeOrderEvent(options, order)),
     );
 
     return Rx.merge(snapshots$, updates$).pipe(
@@ -114,66 +179,3 @@ export const observeEthfinex = (options: Options) => {
     return Rx.throwError(error);
   }
 };
-
-const normalizeOrderEvent = R.curryN(
-  2,
-  (options: Options, order: [number, number, number]) => {
-    const [id, price, amount] = order;
-    const oid = Buffer.from(`${Exchange.ETHFINEX}:${id}`).toString('base64');
-    const volume = Math.abs(amount);
-    const type = amount > 0 ? OrderType.BID : OrderType.ASK;
-    const trade = createPrice(
-      createQuantity(options.pair.base, volume),
-      createQuantity(options.pair.quote, price * volume),
-    );
-
-    const event =
-      price === 0 ? NormalizedMessageType.REMOVE : NormalizedMessageType.ADD;
-
-    return {
-      id: oid,
-      event,
-      exchange: Exchange.ETHFINEX,
-      order: {
-        id: oid,
-        type,
-        trade,
-        exchange: Exchange.ETHFINEX,
-      },
-    } as RemoveOrderMessage;
-  },
-);
-
-const normalizeSnapshotEvent = R.curryN(
-  2,
-  (options: Options, orders: [number, number, number][]) => {
-    const processed = orders
-      .filter(([_, price]) => {
-        return price !== 0;
-      })
-      .map(([id, price, amount]) => {
-        const oid = Buffer.from(`${Exchange.ETHFINEX}:${id}`).toString(
-          'base64',
-        );
-        const volume = Math.abs(amount);
-        const type = amount > 0 ? OrderType.BID : OrderType.ASK;
-        const trade = createPrice(
-          createQuantity(options.pair.base, volume),
-          createQuantity(options.pair.quote, price * volume),
-        );
-
-        return {
-          id: oid,
-          type,
-          trade,
-          exchange: Exchange.ETHFINEX,
-        } as Order;
-      });
-
-    return {
-      event: NormalizedMessageType.SNAPSHOT,
-      exchange: Exchange.ETHFINEX,
-      orders: processed,
-    } as SnapshotMessage;
-  },
-);
