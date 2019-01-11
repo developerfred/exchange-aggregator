@@ -1,6 +1,5 @@
 import * as R from 'ramda';
-import { Environment } from '@melonproject/protocol/lib/utils/environment/Environment';
-import { getActiveOasisDexOrders } from '@melonproject/protocol/lib/contracts/exchanges/calls/getActiveOasisDexOrders';
+import { Environment, getActiveOasisDexOrders } from '@melonproject/protocol';
 import { Order, Exchange, OrderType, Options } from '../../types';
 import { createPrice } from '@melonproject/token-math/price';
 import { QuantityInterface } from '@melonproject/token-math/quantity';

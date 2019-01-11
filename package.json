@@ -68,7 +68,6 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/protocol": "^0.8.0-alpha.18",
     "@melonproject/token-math": "^0.0.25",
     "@radarrelay/types": "^1.2.1",
     "axios": "^0.18.0",
