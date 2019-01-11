@@ -6,6 +6,7 @@ export enum Exchange {
   'KRAKEN' = 'KRAKEN',
   'KYBER_NETWORK' = 'KYBER_NETWORK',
   'ETHFINEX' = 'ETHFINEX',
+  'OASIS_DEX' = 'OASIS_DEX',
 }
 
 export enum Network {
