@@ -1,4 +1,6 @@
+import * as R from 'ramda';
 import {
+  AggregatedOrder,
   Order,
   Options,
   Network,
@@ -12,24 +14,35 @@ import {
 import { TokenInterface } from '@melonproject/token-math/token';
 import { toAtomic } from '@melonproject/token-math/price';
 import { subtract } from '@melonproject/token-math/bigInteger';
+import {
+  add as addQuantity,
+  createQuantity,
+  QuantityInterface,
+} from '@melonproject/token-math/quantity';
 
-export interface Orderbook {
+export interface AsksAndBids {
+  bids: (AggregatedOrder | Order)[];
+  asks: (AggregatedOrder | Order)[];
+}
+
+export interface Orderbook extends AsksAndBids {
   quote: TokenInterface;
   base: TokenInterface;
   network: Network;
-  bids: Order[];
-  asks: Order[];
 }
 
-export const initializeOrderbook = (options: Options) => ({
+export const createOrderbook = (options: Options, orders?: AsksAndBids) => ({
   quote: options.pair.quote,
   base: options.pair.quote,
   network: options.network,
-  bids: [],
-  asks: [],
+  asks: (orders && orders.asks) || [],
+  bids: (orders && orders.bids) || [],
 });
 
-const sortOrders = (a: Order, b: Order) => {
+export const sortOrders = (
+  a: Order | AggregatedOrder,
+  b: Order | AggregatedOrder,
+) => {
   const priceA = toAtomic(a.trade);
   const priceB = toAtomic(b.trade);
   const difference = parseFloat(subtract(priceB, priceA).toString());
@@ -44,21 +57,44 @@ const sortOrders = (a: Order, b: Order) => {
   return difference;
 };
 
-export const aggregateOrderbookFromOrders = (
-  carry: Orderbook,
-  current: Order[],
+export const reduceCummulativeVolumes = (
+  carry: AggregatedOrder[] = [],
+  order: Order,
+  index: number,
 ) => {
-  const bids = current.filter(order => order.type === OrderType.BID);
-  const asks = current.filter(order => order.type === OrderType.ASK);
+  const token = R.path(['trade', 'base', 'token'], order) as TokenInterface;
+  const current = R.path(['trade', 'base', 'quantity'], order) as number;
+  const previous = R.path(
+    [index - 1, 'cummulative'],
+    carry,
+  ) as QuantityInterface;
+  const cummulative = addQuantity(
+    createQuantity(token, current),
+    previous || createQuantity(token, 0),
+  );
+
+  return (carry || []).concat([
+    {
+      ...order,
+      cummulative,
+    },
+  ]);
+};
+
+export const isBidOrder = R.propEq('type', OrderType.BID);
+export const isAskOrder = R.propEq('type', OrderType.ASK);
+
+export const aggregateOrders = (orders: Order[]): AsksAndBids => {
+  const asks = orders.filter(isAskOrder);
+  const bids = orders.filter(isBidOrder);
 
   return {
-    ...carry,
-    bids: carry.bids.concat(bids).sort(sortOrders),
-    asks: carry.asks.concat(asks).sort(sortOrders),
+    asks: asks.reduce(reduceCummulativeVolumes, []),
+    bids: bids.reduce(reduceCummulativeVolumes, []),
   };
 };
 
-export const aggregateOrderbookFromEvents = (
+export const aggregateEvents = (
   carry: Orderbook,
   current: OrderMessage | SnapshotMessage,
 ) => {

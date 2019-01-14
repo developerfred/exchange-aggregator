@@ -21,9 +21,9 @@ import { PriceInterface, toFixed } from '@melonproject/token-math/price';
 import { toFixed as toFixedQuantity } from '@melonproject/token-math/quantity';
 import { scan, tap, throttleTime, catchError } from 'rxjs/operators';
 import {
-  initializeOrderbook,
-  aggregateOrderbookFromEvents,
-  aggregateOrderbookFromOrders,
+  createOrderbook,
+  aggregateOrders,
+  aggregateEvents,
 } from './exchanges/aggregate';
 
 const debug = require('debug')('exchange-aggregator');
@@ -119,9 +119,9 @@ const watch = (options: Options, exchanges: Exchange[]) => {
     observable$ => observable$.pipe(catchError(() => Rx.empty())),
   );
 
-  const initial = initializeOrderbook(options);
+  const initial = createOrderbook(options);
   const orderbook$ = Rx.merge(...observables).pipe(
-    scan(aggregateOrderbookFromEvents, initial),
+    scan(aggregateEvents, initial),
     tap(orderbook => {
       const bids = orderbook.bids.length;
       const asks = orderbook.asks.length;
@@ -171,8 +171,10 @@ const fetch = async (options: Options, exchanges: Exchange[]) => {
     }),
   );
 
-  const initial = initializeOrderbook(options);
-  const orderbook = results.reduce(aggregateOrderbookFromOrders, initial);
+  const orderbook = createOrderbook(
+    options,
+    aggregateOrders([].concat(...results)),
+  );
 
   const bids = new Table(style);
   orderbook.bids.forEach(value => {

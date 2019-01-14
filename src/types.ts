@@ -1,5 +1,6 @@
 import { PriceInterface } from '@melonproject/token-math/price';
 import { TokenInterface } from '@melonproject/token-math/token';
+import { QuantityInterface } from '@melonproject/token-math/quantity';
 
 export enum Exchange {
   'RADAR_RELAY' = 'RADAR_RELAY',
@@ -30,6 +31,10 @@ export interface Order {
   type: OrderType;
   trade: PriceInterface;
   original?: any;
+}
+
+export interface AggregatedOrder extends Order {
+  cummulative: QuantityInterface;
 }
 
 export enum NormalizedMessageType {
