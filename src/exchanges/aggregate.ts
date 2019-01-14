@@ -17,6 +17,7 @@ import {
   subtract,
   QuantityInterface,
   createQuantity,
+  BigInteger,
 } from '@melonproject/token-math';
 
 export interface AsksAndBids {
@@ -59,14 +60,16 @@ export const reduceOrderVolumes = (
   index: number,
 ) => {
   const token = R.path(['trade', 'base', 'token'], order) as TokenInterface;
-  const current = R.path(['trade', 'base'], order) as QuantityInterface;
+  const current = R.path(['trade', 'base', 'quantity'], order) as BigInteger;
   const previous = R.path(
     [index - 1, 'cummulative'],
     carry,
   ) as QuantityInterface;
 
-  console.log(current, previous);
-  const cummulative = add(current, previous || createQuantity(token, 0));
+  const cummulative = add(
+    createQuantity(token, current),
+    previous || createQuantity(token, 0),
+  );
 
   return (carry || []).concat([
     {
