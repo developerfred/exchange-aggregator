@@ -517,10 +517,10 @@
     jsbi "^2.0.5"
     web3-utils "^1.0.0-beta.36"
 
-"@melonproject/token-math@^0.0.32":
-  version "0.0.32"
-  resolved "https://registry.yarnpkg.com/@melonproject/token-math/-/token-math-0.0.32.tgz#7fa0bcff54fde88574d23c767118b4b0fe2a8a7e"
-  integrity sha512-FYvnb562JMh2Ok6mK4TShCNCZEeDurmN9Bn1eCHZf+AE3PbDbfuL/6rIvcnYYujQY7Ce2BAaTaMVhNyFqmK6Ow==
+"@melonproject/token-math@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@melonproject/token-math/-/token-math-0.1.2.tgz#6130f55d213bf92e0d31289a8fe4f4ce3d53c787"
+  integrity sha512-v4LNKjDwpQFjkbmZG556jZ1mtt8nTDy2k/+qUCaDVrjgjXXyv5+6bv7VsgxV9oLEFvUHz+V1lOLw+FlAgP5MBA==
   dependencies:
     jsbi "^2.0.5"
     web3-utils "^1.0.0-beta.36"

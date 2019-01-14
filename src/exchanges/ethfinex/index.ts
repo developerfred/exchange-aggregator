@@ -14,8 +14,7 @@ import {
   SnapshotMessage,
   Order,
 } from '../../types';
-import { createPrice } from '@melonproject/token-math/price';
-import { createQuantity } from '@melonproject/token-math/quantity';
+import { createQuantity, createPrice } from '@melonproject/token-math';
 import { debugEvent } from '../debug';
 
 const debug = require('debug')('exchange-aggregator:ethfinex');
@@ -118,7 +117,7 @@ const normalizeSnapshotEvent = (
   } as SnapshotMessage;
 };
 
-export const fetchEtfinexOrders = async (
+export const fetchEthfinexOrders = async (
   options: EthfinexOptions,
 ): Promise<Order[]> => {
   const { data } = await axios.get(getHttpUrl(options));

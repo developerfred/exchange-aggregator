@@ -1,6 +1,5 @@
 import * as R from 'ramda';
 import {
-  AggregatedOrder,
   Order,
   Options,
   Network,
@@ -11,18 +10,18 @@ import {
   RemoveOrderMessage,
   AddOrUpdateOrderMessage,
 } from '../types';
-import { TokenInterface } from '@melonproject/token-math/token';
-import { toAtomic } from '@melonproject/token-math/price';
-import { subtract } from '@melonproject/token-math/bigInteger';
 import {
-  add as addQuantity,
-  createQuantity,
+  TokenInterface,
+  toAtomic,
+  add,
+  subtract,
   QuantityInterface,
-} from '@melonproject/token-math/quantity';
+  createQuantity,
+} from '@melonproject/token-math';
 
 export interface AsksAndBids {
-  bids: (AggregatedOrder | Order)[];
-  asks: (AggregatedOrder | Order)[];
+  bids: Order[];
+  asks: Order[];
 }
 
 export interface Orderbook extends AsksAndBids {
@@ -39,10 +38,7 @@ export const createOrderbook = (options: Options, orders?: AsksAndBids) => ({
   bids: (orders && orders.bids) || [],
 });
 
-export const sortOrders = (
-  a: Order | AggregatedOrder,
-  b: Order | AggregatedOrder,
-) => {
+export const sortOrders = (a: Order, b: Order) => {
   const priceA = toAtomic(a.trade);
   const priceB = toAtomic(b.trade);
   const difference = parseFloat(subtract(priceB, priceA).toString());
@@ -57,21 +53,20 @@ export const sortOrders = (
   return difference;
 };
 
-export const reduceCummulativeVolumes = (
-  carry: AggregatedOrder[] = [],
+export const reduceOrderVolumes = (
+  carry: Order[],
   order: Order,
   index: number,
 ) => {
   const token = R.path(['trade', 'base', 'token'], order) as TokenInterface;
-  const current = R.path(['trade', 'base', 'quantity'], order) as number;
+  const current = R.path(['trade', 'base'], order) as QuantityInterface;
   const previous = R.path(
     [index - 1, 'cummulative'],
     carry,
   ) as QuantityInterface;
-  const cummulative = addQuantity(
-    createQuantity(token, current),
-    previous || createQuantity(token, 0),
-  );
+
+  console.log(current, previous);
+  const cummulative = add(current, previous || createQuantity(token, 0));
 
   return (carry || []).concat([
     {
@@ -89,13 +84,13 @@ export const aggregateOrders = (orders: Order[]): AsksAndBids => {
   const bids = orders.filter(isBidOrder);
 
   return {
-    asks: asks.reduce(reduceCummulativeVolumes, []),
-    bids: bids.reduce(reduceCummulativeVolumes, []),
+    asks: asks.reduce(reduceOrderVolumes, []),
+    bids: bids.reduce(reduceOrderVolumes, []),
   };
 };
 
-export const aggregateEvents = (
-  carry: Orderbook,
+export const reduceOrderEvents = (
+  carry: AsksAndBids,
   current: OrderMessage | SnapshotMessage,
 ) => {
   if (current.event === NormalizedMessageType.SNAPSHOT) {
@@ -105,15 +100,16 @@ export const aggregateEvents = (
     const { exchange } = current;
 
     return {
-      ...carry,
       bids: carry.bids
         .filter(item => item.exchange !== exchange)
         .concat(bids)
-        .sort(sortOrders),
+        .sort(sortOrders)
+        .reduce(reduceOrderVolumes, []),
       asks: carry.asks
         .filter(item => item.exchange !== exchange)
         .concat(asks)
-        .sort(sortOrders),
+        .sort(sortOrders)
+        .reduce(reduceOrderVolumes, []),
     };
   }
 
@@ -122,13 +118,13 @@ export const aggregateEvents = (
     const { id, order } = add;
 
     return {
-      ...carry,
       asks:
         order.type === OrderType.ASK
           ? carry.asks
               .filter(item => item.id !== id)
               .concat([order])
               .sort(sortOrders)
+              .reduce(reduceOrderVolumes, [])
           : carry.asks,
       bids:
         order.type === OrderType.BID
@@ -136,6 +132,7 @@ export const aggregateEvents = (
               .filter(item => item.id !== id)
               .concat([order])
               .sort(sortOrders)
+              .reduce(reduceOrderVolumes, [])
           : carry.bids,
     };
   }
@@ -145,9 +142,12 @@ export const aggregateEvents = (
     const { id } = remove;
 
     return {
-      ...carry,
-      asks: carry.asks.filter(order => order.id !== id),
-      bids: carry.bids.filter(order => order.id !== id),
+      asks: carry.asks
+        .filter(order => order.id !== id)
+        .reduce(reduceOrderVolumes, []),
+      bids: carry.bids
+        .filter(order => order.id !== id)
+        .reduce(reduceOrderVolumes, []),
     };
   }
 

@@ -13,24 +13,27 @@ import {
 import { observeRadarRelay } from './exchanges/radar-relay';
 import { observeKraken } from './exchanges/kraken';
 import { observeKyber } from './exchanges/kyber';
-import { observeEthfinex, fetchEtfinexOrders } from './exchanges/ethfinex';
+import { observeEthfinex, fetchEthfinexOrders } from './exchanges/ethfinex';
 import { fetchOasisDexOrders } from './exchanges/oasis-dex';
 import { constructEnvironment } from '@melonproject/protocol';
-import { createToken } from '@melonproject/token-math/token';
-import { PriceInterface, toFixed } from '@melonproject/token-math/price';
-import { toFixed as toFixedQuantity } from '@melonproject/token-math/quantity';
+import {
+  PriceInterface,
+  QuantityInterface,
+  createToken,
+  toFixed,
+} from '@melonproject/token-math';
 import { scan, tap, throttleTime, catchError } from 'rxjs/operators';
 import {
   createOrderbook,
   aggregateOrders,
-  aggregateEvents,
+  reduceOrderEvents,
 } from './exchanges/aggregate';
 
 const debug = require('debug')('exchange-aggregator');
 
 const style = {
-  head: ['ID', 'Exchange', 'Price', 'Volume'],
-  colWidths: [25, 15, 25, 25],
+  head: ['ID', 'Exchange', 'Price', 'Volume', 'Cummulative volume'],
+  colWidths: [25, 15, 25, 25, 25],
   chars: {
     top: '═',
     'top-mid': '╤',
@@ -57,10 +60,10 @@ const displayPrice = (price: PriceInterface, decimals?: number) => {
   return `${value} ${base}/${quote}`;
 };
 
-const displayVolume = (price: PriceInterface) => {
-  const base = price.base.token.symbol;
-  const quantity = toFixedQuantity(price.base);
-  return `${quantity} ${base}`;
+const displayVolume = (quantity: QuantityInterface) => {
+  const base = quantity.token.symbol;
+  const volume = toFixed(quantity);
+  return `${volume} ${base}`;
 };
 
 const exchangeOrderObservableCreators = {
@@ -82,7 +85,7 @@ const exchangeOrderFetcherCreators = {
   [Exchange.KYBER_NETWORK]: (options: Options) =>
     Promise.reject(new Error('Kyber is not fully implemented yet')),
   [Exchange.ETHFINEX]: (options: Options) => {
-    return fetchEtfinexOrders(options);
+    return fetchEthfinexOrders(options);
   },
   [Exchange.OASIS_DEX]: (options: Options) => {
     const endpoint = 'ws://localhost:8545';
@@ -119,9 +122,8 @@ const watch = (options: Options, exchanges: Exchange[]) => {
     observable$ => observable$.pipe(catchError(() => Rx.empty())),
   );
 
-  const initial = createOrderbook(options);
   const orderbook$ = Rx.merge(...observables).pipe(
-    scan(aggregateEvents, initial),
+    scan(reduceOrderEvents, { asks: [], bids: [] }),
     tap(orderbook => {
       const bids = orderbook.bids.length;
       const asks = orderbook.asks.length;
@@ -136,15 +138,17 @@ const watch = (options: Options, exchanges: Exchange[]) => {
         const bids = new Table(style);
         orderbook.bids.forEach(value => {
           const price = displayPrice(value.trade);
-          const volume = displayVolume(value.trade);
-          bids.push([value.id, value.exchange, price, volume]);
+          const volume = displayVolume(value.trade.base);
+          const cummulative = displayVolume(value.cummulative);
+          bids.push([value.id, value.exchange, price, volume, cummulative]);
         });
 
         const asks = new Table(style);
         orderbook.asks.forEach(value => {
           const price = displayPrice(value.trade);
-          const volume = displayVolume(value.trade);
-          asks.push([value.id, value.exchange, price, volume]);
+          const volume = displayVolume(value.trade.base);
+          const cummulative = displayVolume(value.cummulative);
+          asks.push([value.id, value.exchange, price, volume, cummulative]);
         });
 
         console.log('Asks');
@@ -166,9 +170,7 @@ const watch = (options: Options, exchanges: Exchange[]) => {
 const fetch = async (options: Options, exchanges: Exchange[]) => {
   const promises = createExchangeOrderFetchers(options, exchanges);
   const results = await Promise.all(
-    promises.map(promise => {
-      return promise.catch(() => []);
-    }),
+    promises.map(promise => promise.catch(() => [])),
   );
 
   const orderbook = createOrderbook(
@@ -179,15 +181,17 @@ const fetch = async (options: Options, exchanges: Exchange[]) => {
   const bids = new Table(style);
   orderbook.bids.forEach(value => {
     const price = displayPrice(value.trade);
-    const volume = displayVolume(value.trade);
-    bids.push([value.id, value.exchange, price, volume]);
+    const volume = displayVolume(value.trade.base);
+    const cummulative = displayVolume(value.cummulative);
+    bids.push([value.id, value.exchange, price, volume, cummulative]);
   });
 
   const asks = new Table(style);
   orderbook.asks.forEach(value => {
     const price = displayPrice(value.trade);
-    const volume = displayVolume(value.trade);
-    asks.push([value.id, value.exchange, price, volume]);
+    const volume = displayVolume(value.trade.base);
+    const cummulative = displayVolume(value.cummulative);
+    asks.push([value.id, value.exchange, price, volume, cummulative]);
   });
 
   console.log('Asks');

@@ -28,8 +28,7 @@ import {
   OrderType,
   AddOrUpdateOrderMessage,
 } from '../../types';
-import { createPrice } from '@melonproject/token-math/price';
-import { createQuantity } from '@melonproject/token-math/quantity';
+import { createQuantity, createPrice } from '@melonproject/token-math';
 import { debugEvent } from '../debug';
 
 const debug = require('debug')('exchange-aggregator:radar-relay');
