@@ -12,6 +12,8 @@ npm install @melonproject/exchange-aggregator
 
 ## Usage example
 
+Please note, that not all asset pairs are available on all exchanges.
+
 ```typescript
 import { Network, exchanges, aggregateOrders, createOrderbook } from '@melonproject/exchange-aggregator';
 
