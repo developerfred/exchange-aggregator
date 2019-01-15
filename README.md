@@ -15,6 +15,7 @@ npm install @melonproject/exchange-aggregator
 Please note, that not all asset pairs are available on all exchanges.
 
 ```typescript
+import { createToken } from '@melonproject/token-math';
 import { Network, exchanges, aggregateOrders, createOrderbook } from '@melonproject/exchange-aggregator';
 
 const options = {
