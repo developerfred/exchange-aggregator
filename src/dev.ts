@@ -10,11 +10,12 @@ import {
   SnapshotMessage,
   OrderMessage,
 } from './types';
-import { observeRadarRelay } from './exchanges/radar-relay';
-import { observeKraken } from './exchanges/kraken';
-import { observeKyber } from './exchanges/kyber';
-import { observeEthfinex, fetchEthfinexOrders } from './exchanges/ethfinex';
-import { fetchOasisDexOrders } from './exchanges/oasis-dex';
+import {
+  exchanges,
+  createOrderbook,
+  aggregateOrders,
+  reduceOrderEvents,
+} from './';
 import { constructEnvironment } from '@melonproject/protocol';
 import {
   PriceInterface,
@@ -23,11 +24,6 @@ import {
   toFixed,
 } from '@melonproject/token-math';
 import { scan, tap, throttleTime, catchError } from 'rxjs/operators';
-import {
-  createOrderbook,
-  aggregateOrders,
-  reduceOrderEvents,
-} from './exchanges/aggregate';
 
 const debug = require('debug')('exchange-aggregator');
 
@@ -67,31 +63,47 @@ const displayVolume = (quantity: QuantityInterface) => {
 };
 
 const exchangeOrderObservableCreators = {
-  [Exchange.RADAR_RELAY]: (options: Options) => observeRadarRelay(options),
-  [Exchange.KRAKEN]: (options: Options) => observeKraken(options),
-  [Exchange.KYBER_NETWORK]: (options: Options) => observeKyber(options),
-  [Exchange.ETHFINEX]: (options: Options) => {
-    return observeEthfinex(options);
+  [Exchange.RADAR_RELAY]: (options: Options) => {
+    return exchanges.radarrelay.watch(options);
   },
-  [Exchange.OASIS_DEX]: () =>
-    Rx.throwError(new Error('OasisDex is not fully implemented yet.')),
-};
-
-const exchangeOrderFetcherCreators = {
-  [Exchange.RADAR_RELAY]: () =>
-    Promise.reject(new Error('Radar relay is not fully implemented yet')),
-  [Exchange.KRAKEN]: (options: Options) =>
-    Promise.reject(new Error('Kraken is not fully implemented yet')),
-  [Exchange.KYBER_NETWORK]: (options: Options) =>
-    Promise.reject(new Error('Kyber is not fully implemented yet')),
+  [Exchange.KRAKEN]: (options: Options) => {
+    return exchanges.kraken.watch(options);
+  },
+  [Exchange.KYBER_NETWORK]: (options: Options) => {
+    return exchanges.kyber.watch(options);
+  },
   [Exchange.ETHFINEX]: (options: Options) => {
-    return fetchEthfinexOrders(options);
+    return exchanges.ethfinex.watch(options);
   },
   [Exchange.OASIS_DEX]: (options: Options) => {
     const endpoint = 'ws://localhost:8545';
     const environment = constructEnvironment({ endpoint });
 
-    return fetchOasisDexOrders({
+    return exchanges.oasisdex.watch({
+      ...options,
+      environment,
+    });
+  },
+};
+
+const exchangeOrderFetcherCreators = {
+  [Exchange.RADAR_RELAY]: (options: Options) => {
+    return exchanges.radarrelay.fetch(options);
+  },
+  [Exchange.KRAKEN]: (options: Options) => {
+    return exchanges.kraken.fetch(options);
+  },
+  [Exchange.KYBER_NETWORK]: (options: Options) => {
+    return exchanges.kyber.fetch(options);
+  },
+  [Exchange.ETHFINEX]: (options: Options) => {
+    return exchanges.ethfinex.fetch(options);
+  },
+  [Exchange.OASIS_DEX]: (options: Options) => {
+    const endpoint = 'ws://localhost:8545';
+    const environment = constructEnvironment({ endpoint });
+
+    return exchanges.oasisdex.fetch({
       ...options,
       environment,
     });
@@ -170,13 +182,16 @@ const watch = (options: Options, exchanges: Exchange[]) => {
 const fetch = async (options: Options, exchanges: Exchange[]) => {
   const promises = createExchangeOrderFetchers(options, exchanges);
   const results = await Promise.all(
-    promises.map(promise => promise.catch(() => [])),
+    promises.map(promise =>
+      promise.catch(error => {
+        debug('Error: %s', error);
+        return [];
+      }),
+    ),
   );
 
-  const orderbook = createOrderbook(
-    options,
-    aggregateOrders([].concat(...results)),
-  );
+  const orders = aggregateOrders([].concat(...results));
+  const orderbook = createOrderbook(options, orders);
 
   const bids = new Table(style);
   orderbook.bids.forEach(value => {

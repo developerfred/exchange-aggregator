@@ -1,13 +1,10 @@
 import * as R from 'ramda';
-import { Environment, getActiveOasisDexOrders } from '@melonproject/protocol';
-import { Order, Exchange, OrderType, Options } from '../../types';
+import { getActiveOasisDexOrders } from '@melonproject/protocol';
+import { Order, Exchange, OrderType } from '../../types';
 import { QuantityInterface, createPrice } from '@melonproject/token-math';
+import { OasisDex } from './types';
 
 // const debug = require('debug')('exchange-aggregator:oasis-dex');
-
-export interface OasisDexOptions extends Options {
-  environment: Environment;
-}
 
 interface OasisDexOrder {
   id: number;
@@ -16,11 +13,10 @@ interface OasisDexOrder {
 }
 
 const exchangePath = ['thirdPartyContracts', 'exchanges', 'matchingMarket'];
-
 const contractPath = ['melonContracts', 'adapters', 'matchingMarketAccessor'];
 
-export const fetchOasisDexOrders = async (
-  options: OasisDexOptions,
+export const fetch = async (
+  options: OasisDex.FetchOptions,
 ): Promise<Order[]> => {
   const environment = options.environment;
   const deployment = environment.deployment;

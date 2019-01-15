@@ -37,7 +37,7 @@ export interface Order {
 }
 
 export enum NormalizedMessageType {
-  'ADD' = 'ADD',
+  'SET' = 'SET',
   'REMOVE' = 'REMOVE',
   'SNAPSHOT' = 'SNAPSHOT',
 }
@@ -53,8 +53,8 @@ export interface OrderMessage {
   exchange: Exchange;
 }
 
-export interface AddOrUpdateOrderMessage extends OrderMessage {
-  event: NormalizedMessageType.ADD;
+export interface SetOrderMessage extends OrderMessage {
+  event: NormalizedMessageType.SET;
   order: Order;
 }
 
@@ -66,4 +66,15 @@ export interface SnapshotMessage {
   event: NormalizedMessageType.SNAPSHOT;
   exchange: Exchange;
   orders: Order[];
+}
+
+export interface AsksAndBids {
+  bids: Order[];
+  asks: Order[];
+}
+
+export interface Orderbook extends AsksAndBids {
+  quote: TokenInterface;
+  base: TokenInterface;
+  network: Network;
 }

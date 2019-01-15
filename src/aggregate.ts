@@ -2,14 +2,14 @@ import * as R from 'ramda';
 import {
   Order,
   Options,
-  Network,
   OrderMessage,
   SnapshotMessage,
   NormalizedMessageType,
   OrderType,
   RemoveOrderMessage,
-  AddOrUpdateOrderMessage,
-} from '../types';
+  SetOrderMessage,
+  AsksAndBids,
+} from './types';
 import {
   TokenInterface,
   toAtomic,
@@ -19,17 +19,6 @@ import {
   createQuantity,
   BigInteger,
 } from '@melonproject/token-math';
-
-export interface AsksAndBids {
-  bids: Order[];
-  asks: Order[];
-}
-
-export interface Orderbook extends AsksAndBids {
-  quote: TokenInterface;
-  base: TokenInterface;
-  network: Network;
-}
 
 export const createOrderbook = (options: Options, orders?: AsksAndBids) => ({
   quote: options.pair.quote,
@@ -116,8 +105,8 @@ export const reduceOrderEvents = (
     };
   }
 
-  if (current.event === NormalizedMessageType.ADD) {
-    const add = current as AddOrUpdateOrderMessage;
+  if (current.event === NormalizedMessageType.SET) {
+    const add = current as SetOrderMessage;
     const { id, order } = add;
 
     return {
