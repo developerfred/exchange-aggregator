@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { Network, Order } from '../../types';
-import { EthfinexOrder, normalizeOrder } from './common';
+import { EthfinexOrder, normalizeOrder, wethToEth } from './common';
 import { Ethfinex } from './types';
 
 const getHttpUrl = (options: Ethfinex.FetchOptions) => {
-  const base = options.pair.base.symbol;
-  const quote = options.pair.quote.symbol;
+  const base = wethToEth(options.pair.base.symbol);
+  const quote = wethToEth(options.pair.quote.symbol);
 
   switch (options.network) {
     case Network.MAINNET:

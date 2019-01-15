@@ -1,9 +1,6 @@
 import { watch as watchKraken, fetch as fetchKraken } from './kraken';
-
 import { watch as watchEthfinex, fetch as fetchEthfinex } from './ethfinex';
-
 import { watch as watchKyber, fetch as fetchKyber } from './kyber';
-
 import { watch as watchOasisDex, fetch as fetchOasisDex } from './oasisdex';
 
 import {

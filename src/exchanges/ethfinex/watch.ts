@@ -11,7 +11,7 @@ import {
   SnapshotMessage,
 } from '../../types';
 import { debugEvent } from '../../debug';
-import { normalizeOrder, EthfinexOrder } from './common';
+import { EthfinexOrder, normalizeOrder, wethToEth } from './common';
 import { Ethfinex } from './types';
 
 const debug = require('debug')('exchange-aggregator:ethfinex');
@@ -25,8 +25,8 @@ interface SubscribeMessage {
 }
 
 const subscribeMessage = (options: Ethfinex.WatchOptions) => {
-  const base = options.pair.base.symbol;
-  const quote = options.pair.quote.symbol;
+  const base = wethToEth(options.pair.base.symbol);
+  const quote = wethToEth(options.pair.quote.symbol);
   const message: SubscribeMessage = {
     event: 'subscribe',
     channel: 'book',

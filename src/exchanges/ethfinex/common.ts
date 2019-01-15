@@ -4,6 +4,8 @@ import { Ethfinex } from './types';
 
 export type EthfinexOrder = [number, number, number];
 
+export const wethToEth = (token: string) => token.replace(/^WETH$/, 'ETH');
+
 export const normalizeOrder = (
   options: Ethfinex.Options,
   order: EthfinexOrder,
