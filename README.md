@@ -1,5 +1,15 @@
 # Exchange aggregator
 
+## Installation
+
+```
+# With yarn
+yarn add @melonproject/exchange-aggregator
+
+# With npm
+npm install @melonproject/exchange-aggregator
+```
+
 ## Usage example
 
 ```typescript
