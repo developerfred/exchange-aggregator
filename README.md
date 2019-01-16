@@ -43,10 +43,8 @@ const promises = await Promise.all([
 ]);
 
 // Concatenate the api responses into a single array.
-const allOrders = [].concat(...promises);
-
+const orders = [].concat(...promises);
 // Aggregate all orders into a sorted orderbook with
 // cummulative volume information.
-const asksAndBids = aggregateOrders(allOrders);
-const orderbook = createOrderbook(options, asksAndBids);
+const orderbook = createOrderbook(options, orders);
 ```
