@@ -47,7 +47,7 @@ export const watch = (options: Kyber.WatchOptions) => {
   return rates$.pipe(
     map(createSnapshot),
     tap(event => debug.log('Source event: %e', event)),
-    cleanEvents,
+    cleanEvents(),
     tap(event => debug.log('Output event: %e', event)),
   );
 };

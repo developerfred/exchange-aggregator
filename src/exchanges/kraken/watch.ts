@@ -44,7 +44,7 @@ export const watch = (options: Kraken.Options) => {
   return polling$.pipe(
     map(createSnapshot),
     tap(event => debug.log('Source event: %e', event)),
-    cleanEvents,
+    cleanEvents(),
     tap(event => debug.log('Output event: %e', event)),
   );
 };

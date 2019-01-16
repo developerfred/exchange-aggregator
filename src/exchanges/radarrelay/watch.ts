@@ -258,7 +258,7 @@ export const watch = (options: Options) => {
       [isRemoveOrderEvent, data => normalizeRemoveOrderEvent(data.event)],
     ]) as (payload: WebsocketEvent | RadarBook) => AnyOrderMessage),
     tap(event => debug.log('Source event: %e', event)),
-    cleanEvents,
+    cleanEvents(),
     tap(event => debug.log('Output event: %e', event)),
   );
 };

@@ -126,7 +126,7 @@ export const watch = (options: Ethfinex.WatchOptions) => {
 
   return Rx.merge(snapshots$, updates$).pipe(
     tap(event => debug.log('Source event: %e', event)),
-    cleanEvents,
+    cleanEvents(),
     tap(event => debug.log('Output event: %e', event)),
   );
 };

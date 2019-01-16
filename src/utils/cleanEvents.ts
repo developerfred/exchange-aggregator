@@ -10,11 +10,13 @@ import {
   AnyOrderMessage,
 } from '../types';
 
-export const cleanEvents: OperatorFunction<AnyOrderMessage, AnyOrderMessage> = (
+export const cleanEvents = (
+  initial: Order[] = [],
+): OperatorFunction<AnyOrderMessage, AnyOrderMessage> => (
   source: Observable<AnyOrderMessage>,
 ) => {
   return new Observable(observer => {
-    let orders: Order[] = [];
+    let orders = initial;
 
     return source.subscribe(
       message => {
