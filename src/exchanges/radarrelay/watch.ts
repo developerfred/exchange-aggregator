@@ -24,10 +24,8 @@ import {
   OrderMessage,
   SetOrderMessage,
 } from '../../types';
-import { debugEvent } from '../../debug';
+import * as debug from '../../debug';
 import { normalizeOrder, fetchRadarBook } from './common';
-
-const debug = require('debug')('exchange-aggregator:radar-relay');
 
 interface SubscribeMessage {
   type: WebsocketRequestType.SUBSCRIBE;
@@ -195,11 +193,11 @@ const getWebsocketConnection = (options: Options) => {
   });
 
   open$.subscribe(() => {
-    debug('Opening connection.');
+    debug.log('Opening connection.');
   });
 
   close$.subscribe(() => {
-    debug('Closing connection.');
+    debug.log('Closing connection.');
   });
 
   return (websocketConnections[options.network] = connection$);
@@ -239,7 +237,7 @@ export const watch = (options: Options) => {
     tap(() => {
       const base = options.pair.base.symbol;
       const quote = options.pair.quote.symbol;
-      debug(`Loading snapshot for market %s-%s.`, base, quote);
+      debug.log(`Loading snapshot for market %s-%s.`, base, quote);
     }),
     switchMap(() => fetchRadarBook(options)),
   );
@@ -260,6 +258,6 @@ export const watch = (options: Options) => {
     ]) as (
       payload: WebsocketEvent | RadarBook,
     ) => OrderMessage | SnapshotMessage),
-    tap(debugEvent(debug)),
+    tap(event => debug.log('%e', event)),
   );
 };

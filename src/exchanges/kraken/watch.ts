@@ -14,11 +14,9 @@ import {
   Exchange,
   SnapshotMessage,
 } from '../../types';
-import { debugEvent } from '../../debug';
+import * as debug from '../../debug';
 import { fetch } from './fetch';
 import { Kraken } from './types';
-
-const debug = require('debug')('exchange-aggregator:kraken');
 
 const createSnapshot = (orders: Order[]): SnapshotMessage => ({
   event: NormalizedMessageType.SNAPSHOT,
@@ -32,11 +30,11 @@ export const watch = (options: Kraken.Options) => {
   const polling$ = Rx.interval(interval).pipe(
     switchMap(() => fetch(options)),
     catchError(error => {
-      debug('Error while trying to fetch: %s.', error);
+      debug.error('Error while trying to fetch: %s.', error);
       return Rx.throwError(error);
     }),
     retryWhen(error => {
-      debug('Caught error. Retrying in %s miliseconds.', interval);
+      debug.log('Retrying in %s miliseconds.', interval);
       return error.pipe(delay(interval));
     }),
     distinctUntilChanged(),
@@ -44,6 +42,6 @@ export const watch = (options: Kraken.Options) => {
 
   return polling$.pipe(
     map(createSnapshot),
-    tap(debugEvent(debug)),
+    tap(event => debug.log('%e', event)),
   );
 };

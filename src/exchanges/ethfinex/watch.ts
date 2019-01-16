@@ -10,11 +10,9 @@ import {
   NormalizedMessageType,
   SnapshotMessage,
 } from '../../types';
-import { debugEvent } from '../../debug';
+import * as debug from '../../debug';
 import { EthfinexOrder, normalizeOrder, wethToEth } from './common';
 import { Ethfinex } from './types';
-
-const debug = require('debug')('exchange-aggregator:ethfinex');
 
 interface SubscribeMessage {
   event: 'subscribe';
@@ -92,11 +90,11 @@ export const watch = (options: Ethfinex.WatchOptions) => {
 
     ws$.next(subscribeMessage(options));
     open$.subscribe(() => {
-      debug('Opening connection.');
+      debug.log('Opening connection.');
     });
 
     close$.subscribe(() => {
-      debug('Closing connection.');
+      debug.log('Closing connection.');
     });
 
     return ws$.subscribe(observer);
@@ -125,5 +123,7 @@ export const watch = (options: Ethfinex.WatchOptions) => {
     map(order => normalizeOrderEvent(options, order)),
   );
 
-  return Rx.merge(snapshots$, updates$).pipe(tap(debugEvent(debug)));
+  return Rx.merge(snapshots$, updates$).pipe(
+    tap(event => debug.log('%e', event)),
+  );
 };

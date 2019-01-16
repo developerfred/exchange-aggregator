@@ -17,5 +17,3 @@ export {
   isRemoveOrderEvent,
   isSnapshotEvent,
 } from './events';
-
-export { debugEvent } from './debug';

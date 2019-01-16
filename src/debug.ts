@@ -1,4 +1,5 @@
 import * as R from 'ramda';
+import debug from 'debug';
 import {
   SnapshotMessage,
   RemoveOrderMessage,
@@ -7,33 +8,32 @@ import {
 } from './types';
 import { isSetOrderEvent, isRemoveOrderEvent, isSnapshotEvent } from './events';
 
-export const debugSetOrderEvent = (value: SetOrderMessage): any[] => [
-  'Setting order %s.',
-  value.id,
-];
+const debugSetOrderEvent = (value: SetOrderMessage): string =>
+  `Setting order ${value.id}.`;
 
-export const debugRemoveOrderEvent = (value: RemoveOrderMessage): any[] => [
-  'Removing order %s.',
-  value.id,
-];
+const debugRemoveOrderEvent = (value: RemoveOrderMessage): string =>
+  `Removing order ${value.id}.`;
 
-export const debugSnapshotEvent = (value: SnapshotMessage): any[] => [
-  'Snapshot with %s orders (bids and asks).',
-  value.orders.length,
-];
+const debugSnapshotEvent = (value: SnapshotMessage): string =>
+  `Snapshot with ${value.orders.length} orders (bids and asks).`;
 
-export const eventToMessageFragments = R.cond<
-  OrderMessage | SnapshotMessage,
-  any[]
->([
+const formatEvent = R.cond<OrderMessage | SnapshotMessage, string>([
   [isSetOrderEvent, debugSetOrderEvent],
   [isRemoveOrderEvent, debugRemoveOrderEvent],
   [isSnapshotEvent, debugSnapshotEvent],
-  [R.T, (...value) => [...value]],
+  [R.T, R.always('Invalid event.')],
 ]);
 
-export type DebugFn = (...args: any[]) => void;
-export const debugEvent = R.curryN(2, (debug: DebugFn, value: any) => {
-  const fragments = eventToMessageFragments(value);
-  debug(...fragments);
-});
+debug.formatters.e = event => {
+  return formatEvent(event);
+};
+
+debug.formatters.s = value => {
+  return value.toString();
+};
+
+export const log = debug('ea:log');
+log.log = console.log.bind(console);
+
+export const error = debug('ea:error');
+error.log = console.error.bind(console);

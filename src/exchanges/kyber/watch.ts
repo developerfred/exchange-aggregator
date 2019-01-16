@@ -13,11 +13,9 @@ import {
   SnapshotMessage,
   Order,
 } from '../../types';
-import { debugEvent } from '../../debug';
+import * as debug from '../../debug';
 import { Kyber } from './types';
 import { fetchCurrencies, Currency, fetchRates } from './fetch';
-
-const debug = require('debug')('exchange-aggregator:kyber');
 
 const createSnapshot = (orders: Order[]): SnapshotMessage => ({
   event: NormalizedMessageType.SNAPSHOT,
@@ -31,7 +29,7 @@ const pollRate = (options: Kyber.WatchOptions, currencies: Currency[]) => {
 
   return Rx.interval(5000).pipe(
     tap(() => {
-      debug(`Loading snapshot for market %s-%s.`, base, quote);
+      debug.log(`Loading snapshot for market %s-%s.`, base, quote);
     }),
     switchMap(() => fetchRates(options, currencies)),
     retryWhen(error => error.pipe(delay(10000))),
@@ -47,6 +45,6 @@ export const watch = (options: Kyber.WatchOptions) => {
 
   return rates$.pipe(
     map(createSnapshot),
-    tap(debugEvent(debug)),
+    tap(event => debug.log('%e', event)),
   );
 };
