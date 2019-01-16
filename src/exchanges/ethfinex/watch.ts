@@ -13,6 +13,7 @@ import {
 import * as debug from '../../debug';
 import { EthfinexOrder, normalizeOrder, wethToEth } from './common';
 import { Ethfinex } from './types';
+import { cleanEvents } from '../../utils/cleanEvents';
 
 interface SubscribeMessage {
   event: 'subscribe';
@@ -124,6 +125,8 @@ export const watch = (options: Ethfinex.WatchOptions) => {
   );
 
   return Rx.merge(snapshots$, updates$).pipe(
-    tap(event => debug.log('%e', event)),
+    tap(event => debug.log('Source event: %e', event)),
+    cleanEvents,
+    tap(event => debug.log('Output event: %e', event)),
   );
 };

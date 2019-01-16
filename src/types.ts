@@ -47,34 +47,39 @@ export enum OrderType {
   'BID' = 'BID',
 }
 
+export type AnyOrderMessage =
+  | SetOrderMessage
+  | RemoveOrderMessage
+  | SnapshotMessage;
+
 export interface OrderMessage {
-  id: string;
   event: NormalizedMessageType;
   exchange: Exchange;
 }
 
 export interface SetOrderMessage extends OrderMessage {
+  exchange: Exchange;
   event: NormalizedMessageType.SET;
+  id: string;
   order: Order;
 }
 
 export interface RemoveOrderMessage extends OrderMessage {
+  exchange: Exchange;
   event: NormalizedMessageType.REMOVE;
+  id: string;
 }
 
-export interface SnapshotMessage {
-  event: NormalizedMessageType.SNAPSHOT;
+export interface SnapshotMessage extends OrderMessage {
   exchange: Exchange;
+  event: NormalizedMessageType.SNAPSHOT;
   orders: Order[];
 }
 
-export interface AsksAndBids {
-  bids: Order[];
-  asks: Order[];
-}
-
-export interface Orderbook extends AsksAndBids {
+export interface Orderbook {
   quote: TokenInterface;
   base: TokenInterface;
   network: Network;
+  bids: Order[];
+  asks: Order[];
 }

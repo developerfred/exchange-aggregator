@@ -72,7 +72,6 @@
     "@melonproject/token-math": "^0.1.5",
     "@radarrelay/types": "^1.2.1",
     "axios": "^0.18.0",
-    "bn.js": "^4.11.8",
     "isomorphic-ws": "^4.0.1",
     "ramda": "^0.26.1",
     "rxjs": "^6.3.3"

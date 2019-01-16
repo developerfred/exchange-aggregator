@@ -21,11 +21,12 @@ import {
   NormalizedMessageType,
   RemoveOrderMessage,
   SnapshotMessage,
-  OrderMessage,
   SetOrderMessage,
+  AnyOrderMessage,
 } from '../../types';
 import * as debug from '../../debug';
 import { normalizeOrder, fetchRadarBook } from './common';
+import { cleanEvents } from '../../utils/cleanEvents';
 
 interface SubscribeMessage {
   type: WebsocketRequestType.SUBSCRIBE;
@@ -98,7 +99,7 @@ const normalizeCancelOrderEvent = (
 ): RemoveOrderMessage => ({
   event: NormalizedMessageType.REMOVE,
   exchange: Exchange.RADAR_RELAY,
-  id: event.orderHash,
+  id: Buffer.from(event.orderHash).toString('base64'),
 });
 
 const normalizeRemoveOrderEvent = (
@@ -106,7 +107,7 @@ const normalizeRemoveOrderEvent = (
 ): RemoveOrderMessage => ({
   event: NormalizedMessageType.REMOVE,
   exchange: Exchange.RADAR_RELAY,
-  id: event.orderHash,
+  id: Buffer.from(event.orderHash).toString('base64'),
 });
 
 const normalizeSnapshotEvent = (
@@ -255,9 +256,9 @@ export const watch = (options: Options) => {
       [isFillOrderEvent, data => normalizeFillOrderEvent(options, data.event)],
       [isCancelOrderEvent, data => normalizeCancelOrderEvent(data.event)],
       [isRemoveOrderEvent, data => normalizeRemoveOrderEvent(data.event)],
-    ]) as (
-      payload: WebsocketEvent | RadarBook,
-    ) => OrderMessage | SnapshotMessage),
-    tap(event => debug.log('%e', event)),
+    ]) as (payload: WebsocketEvent | RadarBook) => AnyOrderMessage),
+    tap(event => debug.log('Source event: %e', event)),
+    cleanEvents,
+    tap(event => debug.log('Output event: %e', event)),
   );
 };

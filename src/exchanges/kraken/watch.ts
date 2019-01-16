@@ -17,6 +17,7 @@ import {
 import * as debug from '../../debug';
 import { fetch } from './fetch';
 import { Kraken } from './types';
+import { cleanEvents } from '../../utils/cleanEvents';
 
 const createSnapshot = (orders: Order[]): SnapshotMessage => ({
   event: NormalizedMessageType.SNAPSHOT,
@@ -42,6 +43,8 @@ export const watch = (options: Kraken.Options) => {
 
   return polling$.pipe(
     map(createSnapshot),
-    tap(event => debug.log('%e', event)),
+    tap(event => debug.log('Source event: %e', event)),
+    cleanEvents,
+    tap(event => debug.log('Output event: %e', event)),
   );
 };

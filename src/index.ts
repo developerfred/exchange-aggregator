@@ -4,7 +4,8 @@ import * as allExchanges from './exchanges';
 export const exchanges = allExchanges;
 
 export {
-  aggregateOrders,
+  isAskOrder,
+  isBidOrder,
   createOrderbook,
   sortOrders,
   reduceOrderEvents,

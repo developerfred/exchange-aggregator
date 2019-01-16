@@ -3,8 +3,8 @@ import debug from 'debug';
 import {
   SnapshotMessage,
   RemoveOrderMessage,
-  OrderMessage,
   SetOrderMessage,
+  AnyOrderMessage,
 } from './types';
 import { isSetOrderEvent, isRemoveOrderEvent, isSnapshotEvent } from './events';
 
@@ -17,7 +17,7 @@ const debugRemoveOrderEvent = (value: RemoveOrderMessage): string =>
 const debugSnapshotEvent = (value: SnapshotMessage): string =>
   `Snapshot with ${value.orders.length} orders (bids and asks).`;
 
-const formatEvent = R.cond<OrderMessage | SnapshotMessage, string>([
+const formatEvent = R.cond<AnyOrderMessage, string>([
   [isSetOrderEvent, debugSetOrderEvent],
   [isRemoveOrderEvent, debugRemoveOrderEvent],
   [isSnapshotEvent, debugSnapshotEvent],

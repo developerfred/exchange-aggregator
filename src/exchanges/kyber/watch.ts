@@ -16,6 +16,7 @@ import {
 import * as debug from '../../debug';
 import { Kyber } from './types';
 import { fetchCurrencies, Currency, fetchRates } from './fetch';
+import { cleanEvents } from '../../utils/cleanEvents';
 
 const createSnapshot = (orders: Order[]): SnapshotMessage => ({
   event: NormalizedMessageType.SNAPSHOT,
@@ -45,6 +46,8 @@ export const watch = (options: Kyber.WatchOptions) => {
 
   return rates$.pipe(
     map(createSnapshot),
-    tap(event => debug.log('%e', event)),
+    tap(event => debug.log('Source event: %e', event)),
+    cleanEvents,
+    tap(event => debug.log('Output event: %e', event)),
   );
 };

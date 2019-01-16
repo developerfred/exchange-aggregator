@@ -1,21 +1,10 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
+import { scan, map, tap, throttleTime, catchError } from 'rxjs/operators';
 import Table from 'cli-table';
 import commander from 'commander';
-import {
-  Exchange,
-  Network,
-  Options,
-  Order,
-  SnapshotMessage,
-  OrderMessage,
-} from './types';
-import {
-  exchanges,
-  createOrderbook,
-  aggregateOrders,
-  reduceOrderEvents,
-} from './';
+import { Exchange, Network, Options, Order, AnyOrderMessage } from './types';
+import { exchanges, createOrderbook, reduceOrderEvents } from './';
 import { constructEnvironment } from '@melonproject/protocol';
 import {
   PriceInterface,
@@ -23,7 +12,6 @@ import {
   createToken,
   toFixed,
 } from '@melonproject/token-math';
-import { scan, tap, throttleTime, catchError } from 'rxjs/operators';
 
 const debug = require('debug')('exchange-aggregator');
 
@@ -113,7 +101,7 @@ const exchangeOrderFetcherCreators = {
 const createExchangeOrderObservables = (
   options: Options,
   exchanges: Exchange[],
-): Rx.Observable<SnapshotMessage | OrderMessage>[] => {
+): Rx.Observable<AnyOrderMessage>[] => {
   return exchanges.map(exchange => {
     return exchangeOrderObservableCreators[exchange](options);
   });
@@ -135,7 +123,8 @@ const watch = (options: Options, exchanges: Exchange[]) => {
   );
 
   const orderbook$ = Rx.merge(...observables).pipe(
-    scan(reduceOrderEvents, { asks: [], bids: [] }),
+    scan(reduceOrderEvents, []),
+    map(orders => createOrderbook(options, orders)),
     tap(orderbook => {
       const bids = orderbook.bids.length;
       const asks = orderbook.asks.length;
@@ -190,7 +179,7 @@ const fetch = async (options: Options, exchanges: Exchange[]) => {
     ),
   );
 
-  const orders = aggregateOrders([].concat(...results));
+  const orders = [].concat(...results);
   const orderbook = createOrderbook(options, orders);
 
   const bids = new Table(style);

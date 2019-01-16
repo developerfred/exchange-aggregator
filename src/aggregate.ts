@@ -2,13 +2,12 @@ import * as R from 'ramda';
 import {
   Order,
   Options,
-  OrderMessage,
   SnapshotMessage,
   NormalizedMessageType,
   OrderType,
   RemoveOrderMessage,
   SetOrderMessage,
-  AsksAndBids,
+  AnyOrderMessage,
 } from './types';
 import {
   TokenInterface,
@@ -20,13 +19,28 @@ import {
   BigInteger,
 } from '@melonproject/token-math';
 
-export const createOrderbook = (options: Options, orders?: AsksAndBids) => ({
-  quote: options.pair.quote,
-  base: options.pair.quote,
-  network: options.network,
-  asks: (orders && orders.asks) || [],
-  bids: (orders && orders.bids) || [],
-});
+export const isBidOrder = R.propEq('type', OrderType.BID);
+export const isAskOrder = R.propEq('type', OrderType.ASK);
+
+export const createOrderbook = (options: Options, orders: Order[]) => {
+  const asks = orders
+    .filter(isAskOrder)
+    .sort(sortOrders)
+    .reduce(reduceOrderVolumes, []);
+
+  const bids = orders
+    .filter(isBidOrder)
+    .sort(sortOrders)
+    .reduce(reduceOrderVolumes, []);
+
+  return {
+    quote: options.pair.quote,
+    base: options.pair.quote,
+    network: options.network,
+    asks,
+    bids,
+  };
+};
 
 export const sortOrders = (a: Order, b: Order) => {
   const priceA = toAtomic(a.trade);
@@ -48,99 +62,46 @@ export const reduceOrderVolumes = (
   order: Order,
   index: number,
 ) => {
-  const token = R.path(['trade', 'base', 'token'], order) as TokenInterface;
-  const current = R.path(['trade', 'base', 'quantity'], order) as BigInteger;
-  const previous = R.path(
-    [index - 1, 'cummulative'],
-    carry,
-  ) as QuantityInterface;
+  const tokenPath = ['trade', 'base', 'token'];
+  const token = R.path(tokenPath, order) as TokenInterface;
+
+  const volumePath = ['trade', 'base', 'quantity'];
+  const volume = R.path(volumePath, order) as BigInteger;
+
+  const previousPath = [index - 1, 'cummulative'];
+  const previous = R.path(previousPath, carry) as QuantityInterface;
 
   const cummulative = add(
-    createQuantity(token, current),
+    createQuantity(token, volume),
     previous || createQuantity(token, 0),
   );
 
-  return (carry || []).concat([
-    {
-      ...order,
-      cummulative,
-    },
-  ]);
-};
-
-export const isBidOrder = R.propEq('type', OrderType.BID);
-export const isAskOrder = R.propEq('type', OrderType.ASK);
-
-export const aggregateOrders = (orders: Order[]): AsksAndBids => {
-  const asks = orders.filter(isAskOrder);
-  const bids = orders.filter(isBidOrder);
-
-  return {
-    asks: asks.reduce(reduceOrderVolumes, []),
-    bids: bids.reduce(reduceOrderVolumes, []),
+  const current = {
+    ...order,
+    cummulative,
   };
+
+  return (carry || []).concat([current]);
 };
 
-export const reduceOrderEvents = (
-  carry: AsksAndBids,
-  current: OrderMessage | SnapshotMessage,
-) => {
+export const reduceOrderEvents = (carry: Order[], current: AnyOrderMessage) => {
   if (current.event === NormalizedMessageType.SNAPSHOT) {
     const snapshot = current as SnapshotMessage;
-    const bids = snapshot.orders.filter(order => order.type === OrderType.BID);
-    const asks = snapshot.orders.filter(order => order.type === OrderType.ASK);
-    const { exchange } = current;
 
-    return {
-      bids: carry.bids
-        .filter(item => item.exchange !== exchange)
-        .concat(bids)
-        .sort(sortOrders)
-        .reduce(reduceOrderVolumes, []),
-      asks: carry.asks
-        .filter(item => item.exchange !== exchange)
-        .concat(asks)
-        .sort(sortOrders)
-        .reduce(reduceOrderVolumes, []),
-    };
+    return carry
+      .filter(item => item.exchange !== snapshot.exchange)
+      .concat(snapshot.orders);
   }
 
   if (current.event === NormalizedMessageType.SET) {
     const add = current as SetOrderMessage;
-    const { id, order } = add;
 
-    return {
-      asks:
-        order.type === OrderType.ASK
-          ? carry.asks
-              .filter(item => item.id !== id)
-              .concat([order])
-              .sort(sortOrders)
-              .reduce(reduceOrderVolumes, [])
-          : carry.asks,
-      bids:
-        order.type === OrderType.BID
-          ? carry.bids
-              .filter(item => item.id !== id)
-              .concat([order])
-              .sort(sortOrders)
-              .reduce(reduceOrderVolumes, [])
-          : carry.bids,
-    };
+    return carry.filter(item => item.id !== add.id).concat([add.order]);
   }
 
   if (current.event === NormalizedMessageType.REMOVE) {
     const remove = current as RemoveOrderMessage;
-    const { id } = remove;
-
-    return {
-      asks: carry.asks
-        .filter(order => order.id !== id)
-        .reduce(reduceOrderVolumes, []),
-      bids: carry.bids
-        .filter(order => order.id !== id)
-        .reduce(reduceOrderVolumes, []),
-    };
+    return carry.filter(order => order.id !== remove.id);
   }
 
   return carry;
