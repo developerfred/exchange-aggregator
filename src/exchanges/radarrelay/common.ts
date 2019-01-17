@@ -44,8 +44,8 @@ export const normalizeOrder = (
 
   return {
     id: oid,
-    type: (order.type as any) as OrderType,
     exchange: Exchange.RADAR_RELAY,
+    type: (order.type as any) as OrderType,
     trade: price,
     original: order,
   };

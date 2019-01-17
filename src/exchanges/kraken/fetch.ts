@@ -31,8 +31,8 @@ const normalizeOrder = (
 
   return {
     id: oid,
-    type,
     exchange: Exchange.KRAKEN,
+    type,
     trade,
   };
 };

@@ -18,9 +18,15 @@ import { Kyber } from './types';
 import { fetchCurrencies, Currency, fetchRates } from './fetch';
 import { cleanEvents } from '../../utils/cleanEvents';
 
-const createSnapshot = (orders: Order[]): SnapshotMessage => ({
+const createSnapshot = (
+  options: Kyber.WatchOptions,
+  orders: Order[],
+): SnapshotMessage => ({
   event: NormalizedMessageType.SNAPSHOT,
   exchange: Exchange.KYBER_NETWORK,
+  network: options.network,
+  base: options.pair.base,
+  quote: options.pair.quote,
   orders,
 });
 
@@ -45,7 +51,7 @@ export const watch = (options: Kyber.WatchOptions) => {
   );
 
   return rates$.pipe(
-    map(createSnapshot),
+    map(orders => createSnapshot(options, orders)),
     tap(event => debug.log('Source event: %e', event)),
     cleanEvents(),
     tap(event => debug.log('Output event: %e', event)),

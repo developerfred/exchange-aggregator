@@ -4,8 +4,6 @@ import { Order, Exchange, OrderType } from '../../types';
 import { QuantityInterface, createPrice } from '@melonproject/token-math';
 import { OasisDex } from './types';
 
-// const debug = require('debug')('exchange-aggregator:oasis-dex');
-
 interface OasisDexOrder {
   id: number;
   buy: QuantityInterface;
@@ -44,8 +42,8 @@ export const fetch = async (
 
       return {
         id,
-        type: OrderType.BID,
         exchange: Exchange.OASIS_DEX,
+        type: OrderType.BID,
         trade: createPrice(order.buy, order.sell),
       };
     },
@@ -58,8 +56,8 @@ export const fetch = async (
 
       return {
         id,
-        type: OrderType.ASK,
         exchange: Exchange.OASIS_DEX,
+        type: OrderType.ASK,
         trade: createPrice(order.sell, order.buy),
       };
     },

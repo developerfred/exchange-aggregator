@@ -77,25 +77,27 @@ const formatResponse = (
   const volumeKey = type === OrderType.ASK ? 'src_qty' : 'dst_qty';
   const priceKey = type === OrderType.ASK ? 'dst_qty' : 'src_qty';
   const groups = response.data.map(current => {
-    return Object.keys(current[volumeKey] as any).map(index => {
-      const volume = current[volumeKey][index];
-      const price = current[priceKey][index];
-      const oid = Buffer.from(`${Exchange.KYBER_NETWORK}:${volume}`).toString(
-        'base64',
-      );
+    return Object.keys(current[volumeKey] as any).map(
+      (index): Order => {
+        const volume = current[volumeKey][index];
+        const price = current[priceKey][index];
+        const oid = Buffer.from(`${Exchange.KYBER_NETWORK}:${volume}`).toString(
+          'base64',
+        );
 
-      const trade = createPrice(
-        createQuantity(options.pair.base, volume),
-        createQuantity(options.pair.quote, price),
-      );
+        const trade = createPrice(
+          createQuantity(options.pair.base, volume),
+          createQuantity(options.pair.quote, price),
+        );
 
-      return {
-        id: oid,
-        type,
-        exchange: Exchange.KYBER_NETWORK,
-        trade,
-      };
-    });
+        return {
+          id: oid,
+          exchange: Exchange.KYBER_NETWORK,
+          type,
+          trade,
+        };
+      },
+    );
   });
 
   return [].concat(...groups) as Order[];

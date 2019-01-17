@@ -6,16 +6,22 @@ export type EthfinexOrder = [number, number, number];
 
 export const wethToEth = (token: string) => token.replace(/^WETH$/, 'ETH');
 
+export const orderId = (order: EthfinexOrder) => {
+  const [id] = order;
+  const key = `${Exchange.ETHFINEX}:${id}`;
+  return Buffer.from(key).toString('base64');
+};
+
 export const normalizeOrder = (
   options: Ethfinex.Options,
   order: EthfinexOrder,
+  id: string,
 ) => {
-  const [id, price, amount] = order;
-  const key = `${Exchange.ETHFINEX}:${id}`;
+  const [, price, amount] = order;
   const volume = Math.abs(amount);
 
   return {
-    id: Buffer.from(key).toString('base64'),
+    id,
     type: amount > 0 ? OrderType.BID : OrderType.ASK,
     exchange: Exchange.ETHFINEX,
     trade: createPrice(

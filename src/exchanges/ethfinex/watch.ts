@@ -9,9 +9,10 @@ import {
   RemoveOrderMessage,
   NormalizedMessageType,
   SnapshotMessage,
+  SetOrderMessage,
 } from '../../types';
 import * as debug from '../../debug';
-import { EthfinexOrder, normalizeOrder, wethToEth } from './common';
+import { EthfinexOrder, normalizeOrder, wethToEth, orderId } from './common';
 import { Ethfinex } from './types';
 import { cleanEvents } from '../../utils/cleanEvents';
 
@@ -50,16 +51,28 @@ const normalizeOrderEvent = (
   order: EthfinexOrder,
 ) => {
   const [, price] = order;
-  const normalized = normalizeOrder(options, order);
-  const event =
-    price === 0 ? NormalizedMessageType.REMOVE : NormalizedMessageType.SET;
+  const id = orderId(order);
+
+  if (price === 0) {
+    return {
+      id,
+      event: NormalizedMessageType.REMOVE,
+      exchange: Exchange.ETHFINEX,
+      network: options.network,
+      base: options.pair.base,
+      quote: options.pair.quote,
+    } as RemoveOrderMessage;
+  }
 
   return {
-    id: normalized.id,
-    event,
+    id,
+    event: NormalizedMessageType.SET,
     exchange: Exchange.ETHFINEX,
-    order: normalized,
-  } as RemoveOrderMessage;
+    network: options.network,
+    base: options.pair.base,
+    quote: options.pair.quote,
+    order: normalizeOrder(options, order, id),
+  } as SetOrderMessage;
 };
 
 const normalizeSnapshotEvent = (
@@ -68,11 +81,17 @@ const normalizeSnapshotEvent = (
 ) => {
   const processed = orders
     .filter(([, price]) => price !== 0)
-    .map(order => normalizeOrder(options, order));
+    .map(order => {
+      const id = orderId(order);
+      return normalizeOrder(options, order, id);
+    });
 
   return {
     event: NormalizedMessageType.SNAPSHOT,
     exchange: Exchange.ETHFINEX,
+    network: options.network,
+    base: options.pair.base,
+    quote: options.pair.quote,
     orders: processed,
   } as SnapshotMessage;
 };

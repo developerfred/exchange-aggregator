@@ -13,8 +13,8 @@ export enum Exchange {
 }
 
 export enum Network {
-  'MAINNET' = 1,
-  'KOVAN' = 42,
+  'MAINNET' = 'MAINNET',
+  'KOVAN' = 'KOVAN',
 }
 
 export interface AssetPair {
@@ -29,9 +29,9 @@ export interface Options {
 
 export interface Order {
   id: string;
-  exchange: Exchange;
   type: OrderType;
   trade: PriceInterface;
+  exchange: Exchange;
   cummulative?: QuantityInterface;
   original?: any;
 }
@@ -52,26 +52,28 @@ export type AnyOrderMessage =
   | RemoveOrderMessage
   | SnapshotMessage;
 
+export type SingularOrderMessage = SetOrderMessage | RemoveOrderMessage;
+
 export interface OrderMessage {
   event: NormalizedMessageType;
+  quote: TokenInterface;
+  base: TokenInterface;
+  network: Network;
   exchange: Exchange;
 }
 
 export interface SetOrderMessage extends OrderMessage {
-  exchange: Exchange;
   event: NormalizedMessageType.SET;
   id: string;
   order: Order;
 }
 
 export interface RemoveOrderMessage extends OrderMessage {
-  exchange: Exchange;
   event: NormalizedMessageType.REMOVE;
   id: string;
 }
 
 export interface SnapshotMessage extends OrderMessage {
-  exchange: Exchange;
   event: NormalizedMessageType.SNAPSHOT;
   orders: Order[];
 }

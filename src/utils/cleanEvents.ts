@@ -8,11 +8,12 @@ import {
   RemoveOrderMessage,
   Order,
   AnyOrderMessage,
+  SingularOrderMessage,
 } from '../types';
 
 export const cleanEvents = (
   initial: Order[] = [],
-): OperatorFunction<AnyOrderMessage, AnyOrderMessage> => (
+): OperatorFunction<AnyOrderMessage, SingularOrderMessage> => (
   source: Observable<AnyOrderMessage>,
 ) => {
   return new Observable(observer => {
@@ -27,7 +28,10 @@ export const cleanEvents = (
             if (!orders.find(R.equals(current))) {
               observer.next({
                 event: NormalizedMessageType.SET,
-                exchange: current.exchange,
+                exchange: snapshot.exchange,
+                network: snapshot.network,
+                base: snapshot.base,
+                quote: snapshot.quote,
                 id: current.id,
                 order: current,
               });
@@ -38,7 +42,10 @@ export const cleanEvents = (
             if (snapshot.orders.find(R.propEq('id', current.id))) {
               observer.next({
                 event: NormalizedMessageType.REMOVE,
-                exchange: current.exchange,
+                exchange: snapshot.exchange,
+                network: snapshot.network,
+                base: snapshot.base,
+                quote: snapshot.quote,
                 id: current.id,
               });
             }

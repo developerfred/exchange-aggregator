@@ -76,6 +76,9 @@ const normalizeNewOrderEvent = (
     id: oid,
     event: NormalizedMessageType.SET,
     exchange: Exchange.RADAR_RELAY,
+    network: options.network,
+    base: options.pair.base,
+    quote: options.pair.quote,
     order: normalizeOrder(options, event.order),
   };
 };
@@ -90,23 +93,34 @@ const normalizeFillOrderEvent = (
     id: oid,
     event: NormalizedMessageType.SET,
     exchange: Exchange.RADAR_RELAY,
+    network: options.network,
+    base: options.pair.base,
+    quote: options.pair.quote,
     order: normalizeOrder(options, event.order),
   };
 };
 
 const normalizeCancelOrderEvent = (
+  options: Options,
   event: RadarCancelOrder,
 ): RemoveOrderMessage => ({
   event: NormalizedMessageType.REMOVE,
   exchange: Exchange.RADAR_RELAY,
+  network: options.network,
+  base: options.pair.base,
+  quote: options.pair.quote,
   id: Buffer.from(event.orderHash).toString('base64'),
 });
 
 const normalizeRemoveOrderEvent = (
+  options: Options,
   event: RadarRemoveOrder,
 ): RemoveOrderMessage => ({
   event: NormalizedMessageType.REMOVE,
   exchange: Exchange.RADAR_RELAY,
+  network: options.network,
+  base: options.pair.base,
+  quote: options.pair.quote,
   id: Buffer.from(event.orderHash).toString('base64'),
 });
 
@@ -116,6 +130,9 @@ const normalizeSnapshotEvent = (
 ): SnapshotMessage => ({
   event: NormalizedMessageType.SNAPSHOT,
   exchange: Exchange.RADAR_RELAY,
+  network: options.network,
+  base: options.pair.base,
+  quote: options.pair.quote,
   orders: [].concat(
     book.asks.map(order => normalizeOrder(options, order)),
     book.bids.map(order => normalizeOrder(options, order)),
@@ -254,8 +271,14 @@ export const watch = (options: Options) => {
       [isSnapshotEvent, data => normalizeSnapshotEvent(options, data)],
       [isNewOrderEvent, data => normalizeNewOrderEvent(options, data.event)],
       [isFillOrderEvent, data => normalizeFillOrderEvent(options, data.event)],
-      [isCancelOrderEvent, data => normalizeCancelOrderEvent(data.event)],
-      [isRemoveOrderEvent, data => normalizeRemoveOrderEvent(data.event)],
+      [
+        isCancelOrderEvent,
+        data => normalizeCancelOrderEvent(options, data.event),
+      ],
+      [
+        isRemoveOrderEvent,
+        data => normalizeRemoveOrderEvent(options, data.event),
+      ],
     ]) as (payload: WebsocketEvent | RadarBook) => AnyOrderMessage),
     tap(event => debug.log('Source event: %e', event)),
     cleanEvents(),

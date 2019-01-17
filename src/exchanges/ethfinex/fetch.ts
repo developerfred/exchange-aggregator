@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Network, Order } from '../../types';
-import { EthfinexOrder, normalizeOrder, wethToEth } from './common';
+import { EthfinexOrder, normalizeOrder, wethToEth, orderId } from './common';
 import { Ethfinex } from './types';
 
 const getHttpUrl = (options: Ethfinex.FetchOptions) => {
@@ -19,5 +19,8 @@ export const fetch = async (
   options: Ethfinex.FetchOptions,
 ): Promise<Order[]> => {
   const { data } = await axios.get(getHttpUrl(options));
-  return data.map((order: EthfinexOrder) => normalizeOrder(options, order));
+  return data.map((order: EthfinexOrder) => {
+    const id = orderId(order);
+    return normalizeOrder(options, order, id);
+  });
 };
