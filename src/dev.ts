@@ -216,11 +216,11 @@ commander
     /(MAINNET|KOVAN)/,
     'MAINNET',
   )
-  .option('-b, --base <symbol>', 'The base token symbol.', /[A-Z]{3,4}/, 'ZRX')
+  .option('-b, --base <symbol>', 'The base token symbol.', /[A-Z_-]{3,}/, 'ZRX')
   .option(
     '-q, --quote <symbol>',
     'The quote token symbol.',
-    /[A-Z]{3,4}/,
+    /[A-Z_-]{3,}/,
     'ETH',
   )
   .description('Retrieve orders from the given exchanges')
