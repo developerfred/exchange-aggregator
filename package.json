@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/exchange-aggregator",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Aggregates orderbooks across various exchanges.",
   "main": "lib/index.umd.js",
   "module": "lib/index.js",
