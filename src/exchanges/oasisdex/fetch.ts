@@ -45,7 +45,7 @@ export const fetch = async (
         exchange: Exchange.OASIS_DEX,
         type: OrderType.BID,
         trade: createPrice(order.buy, order.sell),
-        metadata: {
+        original: {
           id: order.id,
         },
       } as Order;
@@ -62,7 +62,7 @@ export const fetch = async (
         exchange: Exchange.OASIS_DEX,
         type: OrderType.ASK,
         trade: createPrice(order.sell, order.buy),
-        metadata: {
+        original: {
           id: order.id,
         },
       } as Order;
