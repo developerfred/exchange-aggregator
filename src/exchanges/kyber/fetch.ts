@@ -81,9 +81,9 @@ const formatResponse = (
       (index): Order => {
         const volume = current[volumeKey][index];
         const price = current[priceKey][index];
-        const oid = Buffer.from(`${Exchange.KYBER_NETWORK}:${volume}`).toString(
-          'base64',
-        );
+        const pair = `${current.src_id}:${current.dst_id}`;
+        const key = `${Exchange.KYBER_NETWORK}:${pair}:${volume}`;
+        const oid = Buffer.from(key).toString('base64');
 
         const trade = createPrice(
           createQuantity(options.pair.base, volume),

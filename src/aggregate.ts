@@ -14,7 +14,6 @@ import {
   toAtomic,
   add,
   subtract,
-  QuantityInterface,
   createQuantity,
   BigInteger,
 } from '@melonproject/token-math';
@@ -68,12 +67,12 @@ export const reduceOrderVolumes = (
   const volumePath = ['trade', 'base', 'quantity'];
   const volume = R.path(volumePath, order) as BigInteger;
 
-  const previousPath = [index - 1, 'cummulative'];
-  const previous = R.path(previousPath, carry) as QuantityInterface;
+  const previousPath = [index - 1, 'cummulative', 'quantity'];
+  const previous = R.pathOr(0, previousPath, carry) as BigInteger;
 
   const cummulative = add(
     createQuantity(token, volume),
-    previous || createQuantity(token, 0),
+    createQuantity(token, previous),
   );
 
   const current = {

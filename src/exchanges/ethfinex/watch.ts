@@ -42,7 +42,7 @@ const getWebsocketUrl = (options: Ethfinex.WatchOptions) => {
     case Network.MAINNET:
       return 'wss://api.ethfinex.com/ws/2';
     default:
-      throw new Error('Ethfinex only supports the MAINNET network.');
+      return 'wss://kovan.api.ethfinex.com/ws/2';
   }
 };
 

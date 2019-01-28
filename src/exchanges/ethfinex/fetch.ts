@@ -11,7 +11,7 @@ const getHttpUrl = (options: Ethfinex.FetchOptions) => {
     case Network.MAINNET:
       return `https://api.ethfinex.com/v2/book/t${base}${quote}/R0`;
     default:
-      throw new Error('Ethfinex only supports the MAINNET network.');
+      return `https://kovan.api.ethfinex.com/v2/book/t${base}${quote}/R0`;
   }
 };
 
