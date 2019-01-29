@@ -216,13 +216,8 @@ commander
     /(MAINNET|KOVAN)/,
     'MAINNET',
   )
-  .option('-b, --base <symbol>', 'The base token symbol.', /[A-Z_-]{3,}/, 'ZRX')
-  .option(
-    '-q, --quote <symbol>',
-    'The quote token symbol.',
-    /[A-Z_-]{3,}/,
-    'ETH',
-  )
+  .option('-b, --base <symbol>', 'The base token symbol.')
+  .option('-q, --quote <symbol>', 'The quote token symbol.')
   .description('Retrieve orders from the given exchanges')
   .action(async (args, options) => {
     const supported = Object.keys(Exchange);
@@ -235,6 +230,11 @@ commander
         supported.join(', '),
       );
 
+      process.exit(1);
+    }
+
+    if (!options.base || !options.quote) {
+      console.error('You need to specify a quote and base token.');
       process.exit(1);
     }
 
