@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/exchange-aggregator",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Aggregates orderbooks across various exchanges.",
   "main": "lib/index.umd.js",
   "module": "lib/index.js",
@@ -68,7 +68,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/protocol": "^0.9.0-alpha.25",
+    "@melonproject/protocol": "^0.9.23",
     "@melonproject/token-math": "^0.1.5",
     "@radarrelay/types": "^1.2.1",
     "axios": "^0.18.0",
