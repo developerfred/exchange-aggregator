@@ -6,6 +6,7 @@ import {
   retryWhen,
   distinctUntilChanged,
   tap,
+  exhaustMap,
 } from 'rxjs/operators';
 import {
   NormalizedMessageType,
@@ -34,11 +35,11 @@ const pollRate = (options: Kyber.WatchOptions, currencies: Currency[]) => {
   const base = options.pair.base.symbol;
   const quote = options.pair.quote.symbol;
 
-  return Rx.interval(5000).pipe(
+  return Rx.timer(0, 5000).pipe(
     tap(() => {
       debug.log(`Loading snapshot for market %s-%s.`, base, quote);
     }),
-    switchMap(() => fetchRates(options, currencies)),
+    exhaustMap(() => fetchRates(options, currencies)),
     retryWhen(error => error.pipe(delay(10000))),
     distinctUntilChanged(),
   );

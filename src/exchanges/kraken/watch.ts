@@ -1,12 +1,12 @@
 import * as Rx from 'rxjs';
 import {
   map,
-  switchMap,
   delay,
   retryWhen,
   catchError,
   distinctUntilChanged,
   tap,
+  exhaustMap,
 } from 'rxjs/operators';
 import {
   Order,
@@ -34,8 +34,8 @@ const createSnapshot = (
 export const watch = (options: Kraken.Options) => {
   const interval = options.interval || 5000;
 
-  const polling$ = Rx.interval(interval).pipe(
-    switchMap(() => fetch(options)),
+  const polling$ = Rx.timer(0, interval).pipe(
+    exhaustMap(() => fetch(options)),
     catchError(error => {
       debug.error('Error while trying to fetch: %s.', error);
       return Rx.throwError(error);

@@ -94,7 +94,6 @@ export const reduceOrderEvents = (carry: Order[], current: AnyOrderMessage) => {
 
   if (current.event === NormalizedMessageType.SET) {
     const add = current as SetOrderMessage;
-
     return carry.filter(item => item.id !== add.id).concat([add.order]);
   }
 
