@@ -3,6 +3,7 @@ import {
   QuantityInterface,
   PriceInterface,
 } from '@melonproject/token-math';
+import { Environment } from '@melonproject/protocol';
 
 export enum Exchange {
   'RADAR_RELAY' = 'RADAR_RELAY',
@@ -25,6 +26,7 @@ export interface AssetPair {
 export interface Options {
   pair: AssetPair;
   network: Network;
+  environment?: Environment;
 }
 
 export interface Order {

@@ -39,7 +39,7 @@ export const cleanEvents = (
           });
 
           orders.forEach(current => {
-            if (snapshot.orders.find(R.propEq('id', current.id))) {
+            if (!snapshot.orders.find(R.propEq('id', current.id))) {
               observer.next({
                 event: NormalizedMessageType.REMOVE,
                 exchange: snapshot.exchange,

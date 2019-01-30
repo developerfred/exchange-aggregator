@@ -5,13 +5,15 @@ import Table from 'cli-table';
 import commander from 'commander';
 import { Exchange, Network, Options, Order, AnyOrderMessage } from './types';
 import { exchanges, createOrderbook, reduceOrderEvents } from './';
-import { constructEnvironment } from '@melonproject/protocol';
+import { constructEnvironment, getTokenBySymbol } from '@melonproject/protocol';
+import { withDeployment } from '@melonproject/protocol/lib/utils/environment/withDeployment';
+import { Tracks } from '@melonproject/protocol/lib/utils/environment/Environment';
 import {
   PriceInterface,
   QuantityInterface,
-  createToken,
   toFixed,
 } from '@melonproject/token-math';
+import { OasisDex } from './exchanges/oasisdex/types';
 
 const debug = require('debug')('exchange-aggregator');
 
@@ -51,60 +53,50 @@ const displayVolume = (quantity: QuantityInterface) => {
 };
 
 const exchangeOrderObservableCreators = {
-  [Exchange.RADAR_RELAY]: (options: Options) => {
+  [Exchange.RADAR_RELAY]: async (options: Options) => {
     return exchanges.radarrelay.watch(options);
   },
-  [Exchange.KRAKEN]: (options: Options) => {
+  [Exchange.KRAKEN]: async (options: Options) => {
     return exchanges.kraken.watch(options);
   },
-  [Exchange.KYBER_NETWORK]: (options: Options) => {
+  [Exchange.KYBER_NETWORK]: async (options: Options) => {
     return exchanges.kyber.watch(options);
   },
-  [Exchange.ETHFINEX]: (options: Options) => {
+  [Exchange.ETHFINEX]: async (options: Options) => {
     return exchanges.ethfinex.watch(options);
   },
-  [Exchange.OASIS_DEX]: (options: Options) => {
-    const endpoint = 'ws://localhost:8545';
-    const environment = constructEnvironment({ endpoint });
-
-    return exchanges.oasisdex.watch({
-      ...options,
-      environment,
-    });
+  [Exchange.OASIS_DEX]: async (options: Options) => {
+    return exchanges.oasisdex.watch(options as OasisDex.WatchOptions);
   },
 };
 
 const exchangeOrderFetcherCreators = {
-  [Exchange.RADAR_RELAY]: (options: Options) => {
+  [Exchange.RADAR_RELAY]: async (options: Options) => {
     return exchanges.radarrelay.fetch(options);
   },
-  [Exchange.KRAKEN]: (options: Options) => {
+  [Exchange.KRAKEN]: async (options: Options) => {
     return exchanges.kraken.fetch(options);
   },
-  [Exchange.KYBER_NETWORK]: (options: Options) => {
+  [Exchange.KYBER_NETWORK]: async (options: Options) => {
     return exchanges.kyber.fetch(options);
   },
-  [Exchange.ETHFINEX]: (options: Options) => {
+  [Exchange.ETHFINEX]: async (options: Options) => {
     return exchanges.ethfinex.fetch(options);
   },
-  [Exchange.OASIS_DEX]: (options: Options) => {
-    const endpoint = 'ws://localhost:8545';
-    const environment = constructEnvironment({ endpoint });
-
-    return exchanges.oasisdex.fetch({
-      ...options,
-      environment,
-    });
+  [Exchange.OASIS_DEX]: async (options: Options) => {
+    return exchanges.oasisdex.fetch(options as OasisDex.FetchOptions);
   },
 };
 
 const createExchangeOrderObservables = (
   options: Options,
   exchanges: Exchange[],
-): Rx.Observable<AnyOrderMessage>[] => {
-  return exchanges.map(exchange => {
-    return exchangeOrderObservableCreators[exchange](options);
-  });
+): Promise<Rx.Observable<AnyOrderMessage>[]> => {
+  return Promise.all(
+    exchanges.map(exchange => {
+      return exchangeOrderObservableCreators[exchange](options);
+    }),
+  );
 };
 
 const createExchangeOrderFetchers = (
@@ -116,11 +108,12 @@ const createExchangeOrderFetchers = (
   });
 };
 
-const watch = (options: Options, exchanges: Exchange[]) => {
+const watch = async (options: Options, exchanges: Exchange[]) => {
   debug('Aggregating orderbook for %s.', exchanges.join(', '));
-  const observables = createExchangeOrderObservables(options, exchanges).map(
-    observable$ => observable$.pipe(catchError(() => Rx.empty())),
-  );
+  const observables = (await createExchangeOrderObservables(
+    options,
+    exchanges,
+  )).map(observable$ => observable$.pipe(catchError(() => Rx.empty())));
 
   const orderbook$ = Rx.merge(...observables).pipe(
     scan(reduceOrderEvents, []),
@@ -238,13 +231,23 @@ commander
       process.exit(1);
     }
 
+    const endpoint = 'ws://localhost:8545';
+    const environment = await withDeployment(
+      constructEnvironment({
+        track: Tracks.TESTING,
+        endpoint,
+      }),
+    );
+
+    const base = getTokenBySymbol(environment, options.base);
+    const quote = getTokenBySymbol(environment, options.quote);
+    const pair = { base, quote };
+
     const exchanges = args.length ? args : supported;
     const opts: Options = {
       network: (Network[options.network] as unknown) as Network,
-      pair: {
-        base: createToken(options.base),
-        quote: createToken(options.quote),
-      },
+      environment,
+      pair,
     };
 
     if (!!options.watch) {

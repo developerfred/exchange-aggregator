@@ -23,6 +23,7 @@ const createSnapshot = (
   orders,
 });
 
+// TODO: Listen to on-chain events instead of polling.
 export const watch = (options: OasisDex.WatchOptions) => {
   const orders$ = Rx.timer(0, 5000).pipe(
     retryWhen(error => error.pipe(delay(10000))),
