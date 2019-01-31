@@ -50,7 +50,7 @@ export const sortOrders = (a: Order, b: Order) => {
   if (difference === 0) {
     const quantityA = a.trade.base.quantity;
     const quantityB = b.trade.base.quantity;
-    return parseFloat(subtract(quantityB, quantityA).toString());
+    return parseFloat(subtract(quantityA, quantityB).toString());
   }
 
   return difference;

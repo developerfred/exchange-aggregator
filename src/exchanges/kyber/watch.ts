@@ -1,13 +1,5 @@
 import * as Rx from 'rxjs';
-import {
-  map,
-  switchMap,
-  delay,
-  retryWhen,
-  distinctUntilChanged,
-  tap,
-  exhaustMap,
-} from 'rxjs/operators';
+import { map, delay, retryWhen, tap, exhaustMap } from 'rxjs/operators';
 import {
   NormalizedMessageType,
   Exchange,
@@ -16,7 +8,7 @@ import {
 } from '../../types';
 import * as debug from '../../debug';
 import { Kyber } from './types';
-import { fetchCurrencies, Currency, fetchRates } from './fetch';
+import { fetch } from './fetch';
 import { cleanEvents } from '../../utils/cleanEvents';
 
 const createSnapshot = (
@@ -31,27 +23,14 @@ const createSnapshot = (
   orders,
 });
 
-const pollRate = (options: Kyber.WatchOptions, currencies: Currency[]) => {
-  const base = options.pair.base.symbol;
-  const quote = options.pair.quote.symbol;
-
-  return Rx.timer(0, 5000).pipe(
-    tap(() => {
-      debug.log(`Loading snapshot for market %s-%s.`, base, quote);
-    }),
-    exhaustMap(() => fetchRates(options, currencies)),
-    retryWhen(error => error.pipe(delay(10000))),
-    distinctUntilChanged(),
-  );
-};
-
 export const watch = (options: Kyber.WatchOptions) => {
-  const rates$ = Rx.from(fetchCurrencies(options)).pipe(
+  const interval = options.interval || 10000;
+  const orders$ = Rx.timer(0, interval).pipe(
     retryWhen(error => error.pipe(delay(10000))),
-    switchMap(currencies => pollRate(options, currencies)),
+    exhaustMap(() => fetch(options)),
   );
 
-  return rates$.pipe(
+  return orders$.pipe(
     map(orders => createSnapshot(options, orders)),
     tap(event => debug.log('Source event: %e', event)),
     cleanEvents(),

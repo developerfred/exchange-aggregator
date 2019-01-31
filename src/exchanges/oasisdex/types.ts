@@ -6,7 +6,9 @@ export namespace OasisDex {
     environment: Environment;
   }
 
-  export interface WatchOptions extends Options {}
+  export interface WatchOptions extends Options {
+    interval?: number;
+  }
 
   export interface FetchOptions extends Options {}
 }

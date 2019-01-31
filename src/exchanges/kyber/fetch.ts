@@ -1,8 +1,13 @@
-import axios from 'axios';
 import * as R from 'ramda';
 import { Kyber } from './types';
-import { Network, OrderType, Exchange, Order } from '../../types';
-import { createPrice, createQuantity } from '@melonproject/token-math';
+import { Order, Exchange, OrderType } from '../../types';
+import { getExpectedRate } from '@melonproject/protocol';
+import {
+  createQuantity,
+  PriceInterface,
+  createPrice,
+  multiply,
+} from '@melonproject/token-math';
 
 export interface Currency {
   name: string;
@@ -12,144 +17,97 @@ export interface Currency {
   id: string;
 }
 
-interface KyberCurrenciesResponse {
-  error: any;
-  data: Currency[];
-}
+const proxyPath = [
+  'thirdPartyContracts',
+  'exchanges',
+  'kyber',
+  'kyberNetworkProxy',
+];
 
-interface Rate {
-  src_id: string;
-  dst_id: string;
-  src_qty: number[];
-  dst_qty: [];
-}
+export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
+  const quantities = options.quantities || [1, 10, 100, 1000];
+  const environment = options.environment;
+  const deployment = environment.deployment;
+  const proxy = R.path(proxyPath, deployment);
 
-interface KyberRateResponse {
-  error: any;
-  data: Rate[];
-}
-
-const getCurrenciesHttpUrl = (options: Kyber.WatchOptions) => {
-  switch (options.network) {
-    case Network.MAINNET:
-      return 'https://api.kyber.network/currencies';
-    default:
-      throw new Error('Kyber only supports the MAINNET network.');
-  }
-};
-
-const getRateHttpUrl = (
-  options: Kyber.WatchOptions,
-  type: 'buy' | 'sell',
-  currency: string,
-  interval: number[],
-) => {
-  if (options.network !== Network.MAINNET) {
-    throw new Error('Kyber only supports the MAINNET network.');
-  }
-
-  const prefix = `https://api.kyber.network/${type}_rate`;
-  const splits = R.splitEvery(5, interval);
-  const suffix = splits
-    .map(split => {
-      const quantities = split
-        .map(qty => {
-          return `qty=${qty}`;
-        })
-        .join('&');
-
-      return `id=${currency}&${quantities}`;
-    })
-    .join('&');
-
-  return `${prefix}?${suffix}`;
-};
-
-const formatResponse = (
-  options: Kyber.WatchOptions,
-  type: OrderType,
-  response: KyberRateResponse,
-) => {
-  if (response.error) {
-    throw new Error(`Error trying to fetch Kyber ${type} rates.`);
-  }
-
-  const volumeKey = type === OrderType.ASK ? 'src_qty' : 'dst_qty';
-  const priceKey = type === OrderType.ASK ? 'dst_qty' : 'src_qty';
-  const groups = response.data.map(current => {
-    return Object.keys(current[volumeKey] as any).map(
-      (index): Order => {
-        const volume = current[volumeKey][index];
-        const price = current[priceKey][index];
-        const pair = `${current.src_id}:${current.dst_id}`;
-        const key = `${Exchange.KYBER_NETWORK}:${pair}:${volume}`;
-        const oid = Buffer.from(key).toString('base64');
-
-        const trade = createPrice(
-          createQuantity(options.pair.base, volume),
-          createQuantity(options.pair.quote, price),
-        );
-
-        return {
-          id: oid,
-          exchange: Exchange.KYBER_NETWORK,
-          type,
-          trade,
-        };
-      },
-    );
+  const bidQuantities = quantities.map(quantity => {
+    return createQuantity(options.pair.quote, quantity);
   });
 
-  return [].concat(...groups) as Order[];
-};
+  const bidsPromise = Promise.all(
+    bidQuantities.map(quantity => {
+      return getExpectedRate(environment, proxy, {
+        takerAsset: options.pair.quote,
+        makerAsset: options.pair.base,
+        fillTakerQuantity: quantity,
+      });
+    }),
+  );
 
-export const fetchCurrencies = async (options: Kyber.FetchOptions) => {
-  const url = getCurrenciesHttpUrl(options);
-  const response = await axios
-    .get(url)
-    .then(result => result.data as KyberCurrenciesResponse);
+  const askQuantities = quantities.map(quantity => {
+    return createQuantity(options.pair.quote, quantity);
+  });
 
-  if (response.error) {
-    throw new Error(response.error);
-  }
+  const asksPromise = Promise.all(
+    askQuantities.map(quantity => {
+      return getExpectedRate(environment, proxy, {
+        takerAsset: options.pair.base,
+        makerAsset: options.pair.quote,
+        fillTakerQuantity: quantity,
+      });
+    }),
+  );
 
-  return response.data;
-};
-
-export const fetchRates = async (
-  options: Kyber.FetchOptions,
-  currencies: Currency[],
-) => {
-  const base = options.pair.base.symbol;
-  const currency = currencies.find(R.propEq('symbol', base));
-  if (!currency) {
-    throw new Error(`The ${base} token is not supported.`);
-  }
-
-  const quantities = options.quantities || [1, 10, 100, 1000];
-  const buyUrl = getRateHttpUrl(options, 'buy', currency.id, quantities);
-  const sellUrl = getRateHttpUrl(options, 'sell', currency.id, quantities);
-
-  const sellRequest = axios.get(sellUrl).then(result => result.data) as Promise<
-    KyberRateResponse
-  >;
-
-  const buyRequest = axios.get(buyUrl).then(result => result.data) as Promise<
-    KyberRateResponse
-  >;
-
-  const [buyResponse, sellResponse] = await Promise.all([
-    buyRequest,
-    sellRequest,
+  const [bidsResponse, asksResponse] = await Promise.all([
+    bidsPromise,
+    asksPromise,
   ]);
 
-  return [].concat(
-    formatResponse(options, OrderType.BID, buyResponse),
-    formatResponse(options, OrderType.ASK, sellResponse),
-  );
-};
+  const bids = bidsResponse.map(
+    (price: PriceInterface, index): Order => {
+      const volume = quantities[index];
+      const base = price.base;
+      const quote = price.quote;
 
-export const fetch = async (options: Kyber.FetchOptions) => {
-  const currencies = await fetchCurrencies(options);
-  return fetchRates(options, currencies);
+      const trade = createPrice(
+        createQuantity(base.token, multiply(base.quantity, volume)),
+        createQuantity(quote.token, multiply(quote.quantity, volume)),
+      );
+
+      const pair = `${base.token.address}:${quote.token.address}`;
+      const key = `${Exchange.KYBER_NETWORK}:${pair}:${volume}`;
+      const id = Buffer.from(key).toString('base64');
+
+      return {
+        id,
+        exchange: Exchange.KYBER_NETWORK,
+        type: OrderType.BID,
+        trade,
+      } as Order;
+    },
+  );
+
+  const asks = asksResponse.map((price: PriceInterface, index) => {
+    const volume = quantities[index];
+    const base = price.base;
+    const quote = price.quote;
+
+    const trade = createPrice(
+      createQuantity(base.token, multiply(base.quantity, volume)),
+      createQuantity(quote.token, multiply(quote.quantity, volume)),
+    );
+
+    const pair = `${base.token.address}:${quote.token.address}`;
+    const key = `${Exchange.KYBER_NETWORK}:${pair}:${volume}`;
+    const id = Buffer.from(key).toString('base64');
+
+    return {
+      id,
+      exchange: Exchange.KYBER_NETWORK,
+      type: OrderType.ASK,
+      trade,
+    } as Order;
+  });
+
+  return [].concat(bids, asks);
 };

@@ -1,6 +1,6 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
-import { scan, map, tap, throttleTime, catchError } from 'rxjs/operators';
+import { scan, map, tap, catchError } from 'rxjs/operators';
 import Table from 'cli-table';
 import commander from 'commander';
 import { Exchange, Network, Options, Order, AnyOrderMessage } from './types';
@@ -14,6 +14,7 @@ import {
   toFixed,
 } from '@melonproject/token-math';
 import { OasisDex } from './exchanges/oasisdex/types';
+import { Kyber } from './exchanges/kyber/types';
 
 const debug = require('debug')('exchange-aggregator');
 
@@ -60,7 +61,7 @@ const exchangeOrderObservableCreators = {
     return exchanges.kraken.watch(options);
   },
   [Exchange.KYBER_NETWORK]: async (options: Options) => {
-    return exchanges.kyber.watch(options);
+    return exchanges.kyber.watch(options as Kyber.WatchOptions);
   },
   [Exchange.ETHFINEX]: async (options: Options) => {
     return exchanges.ethfinex.watch(options);
@@ -78,7 +79,7 @@ const exchangeOrderFetcherCreators = {
     return exchanges.kraken.fetch(options);
   },
   [Exchange.KYBER_NETWORK]: async (options: Options) => {
-    return exchanges.kyber.fetch(options);
+    return exchanges.kyber.fetch(options as Kyber.FetchOptions);
   },
   [Exchange.ETHFINEX]: async (options: Options) => {
     return exchanges.ethfinex.fetch(options);
@@ -123,7 +124,6 @@ const watch = async (options: Options, exchanges: Exchange[]) => {
       const asks = orderbook.asks.length;
       debug('Aggregated orderbook with %s bids and %s asks.', bids, asks);
     }),
-    throttleTime(5000),
   );
 
   return new Promise((reject, resolve) => {
@@ -231,10 +231,11 @@ commander
       process.exit(1);
     }
 
-    const endpoint = 'ws://localhost:8545';
+    const prefix = (options.network as string).toLowerCase();
+    const endpoint = `wss://${prefix}.melonport.com`;
     const environment = await withDeployment(
       constructEnvironment({
-        track: Tracks.TESTING,
+        track: Tracks.KYBER_PRICE,
         endpoint,
       }),
     );
