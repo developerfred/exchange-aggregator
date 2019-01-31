@@ -50,7 +50,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
   );
 
   const askQuantities = quantities.map(quantity => {
-    return createQuantity(options.pair.quote, quantity);
+    return createQuantity(options.pair.base, quantity);
   });
 
   const asksPromise = Promise.all(
