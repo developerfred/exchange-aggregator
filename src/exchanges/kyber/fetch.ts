@@ -7,6 +7,7 @@ import {
   PriceInterface,
   createPrice,
   multiply,
+  isZero,
 } from '@melonproject/token-math';
 
 export interface Currency {
@@ -42,6 +43,10 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
         fillTakerQuantity: quantity,
       });
     }),
+  ).then(response =>
+    response.filter((price: PriceInterface) => {
+      return !isZero(price.quote.quantity);
+    }),
   );
 
   const askQuantities = quantities.map(quantity => {
@@ -55,6 +60,10 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
         makerAsset: options.pair.quote,
         fillTakerQuantity: quantity,
       });
+    }),
+  ).then(response =>
+    response.filter((price: PriceInterface) => {
+      return !isZero(price.quote.quantity);
     }),
   );
 
