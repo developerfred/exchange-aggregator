@@ -4,6 +4,9 @@ import { Order, OrderType, Exchange, Network } from '../../types';
 import { createPrice, createQuantity } from '@melonproject/token-math';
 import { RadarSignedOrder, RadarBook } from '@radarrelay/types';
 
+// Radar relay has a different symbol for our MLN
+export const mlnToMlnt = (token: string) => token.replace(/^MLN$/, 'MLNT');
+
 export const getHttpUrl = (options: RadarRelay.Options) => {
   const base = options.pair.base.symbol;
   const quote = options.pair.quote.symbol;
@@ -11,7 +14,7 @@ export const getHttpUrl = (options: RadarRelay.Options) => {
   switch (options.network) {
     case Network.KOVAN: {
       const prefix = 'https://api.kovan.radarrelay.com';
-      return `${prefix}/v2/markets/${base}-${quote}/book`;
+      return `${prefix}/v2/markets/${mlnToMlnt(base)}-${mlnToMlnt(quote)}/book`;
     }
 
     case Network.MAINNET: {
