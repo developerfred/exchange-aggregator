@@ -71,8 +71,8 @@ export const reduceOrderVolumes = (
   const previous = R.pathOr(0, previousPath, carry) as BigInteger;
 
   const cummulative = add(
-    createQuantity(token, volume.toString()),
-    createQuantity(token, previous.toString()),
+    createQuantity(token, volume),
+    createQuantity(token, previous),
   );
 
   const current = {

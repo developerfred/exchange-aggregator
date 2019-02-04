@@ -69,7 +69,7 @@
   },
   "dependencies": {
     "@melonproject/protocol": "^0.9.24",
-    "@melonproject/token-math": "^0.1.5",
+    "@melonproject/token-math": "^0.1.6",
     "@radarrelay/types": "^1.2.1",
     "axios": "^0.18.0",
     "isomorphic-ws": "^4.0.1",
