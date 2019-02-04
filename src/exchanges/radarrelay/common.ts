@@ -40,7 +40,7 @@ export const normalizeOrder = (
   const base = parseFloat((order.remainingBaseTokenAmount as any) as string);
   const quote = parseFloat((order.remainingQuoteTokenAmount as any) as string);
 
-  const price = createPrice(
+  const trade = createPrice(
     createQuantity(options.pair.base, base),
     createQuantity(options.pair.quote, quote),
   );
@@ -49,7 +49,7 @@ export const normalizeOrder = (
     id: oid,
     exchange: Exchange.RADAR_RELAY,
     type: (order.type as any) as OrderType,
-    price,
+    trade,
     original: order,
   };
 };

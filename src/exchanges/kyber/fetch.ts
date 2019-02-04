@@ -79,7 +79,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
       const normalized = normalize(createPrice(bid.quote, bid.base));
       const base = normalized.base;
       const quote = normalized.quote;
-      const price = createPrice(
+      const trade = createPrice(
         createQuantity(base.token, multiply(base.quantity, volume)),
         createQuantity(quote.token, multiply(quote.quantity, volume)),
       );
@@ -92,7 +92,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
         id,
         exchange: Exchange.KYBER_NETWORK,
         type: OrderType.BID,
-        price,
+        trade,
       } as Order;
     },
   );
@@ -101,8 +101,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
     const volume = quantities[index];
     const base = ask.base;
     const quote = ask.quote;
-
-    const price = createPrice(
+    const trade = createPrice(
       createQuantity(base.token, multiply(base.quantity, volume)),
       createQuantity(quote.token, multiply(quote.quantity, volume)),
     );
@@ -115,7 +114,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
       id,
       exchange: Exchange.KYBER_NETWORK,
       type: OrderType.ASK,
-      price,
+      trade,
     } as Order;
   });
 

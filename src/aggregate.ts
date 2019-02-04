@@ -42,14 +42,14 @@ export const createOrderbook = (options: Options, orders: Order[]) => {
 };
 
 export const sortOrders = (a: Order, b: Order) => {
-  const priceA = toAtomic(a.price);
-  const priceB = toAtomic(b.price);
+  const priceA = toAtomic(a.trade);
+  const priceB = toAtomic(b.trade);
   const difference = parseFloat(subtract(priceB, priceA).toString());
 
   // Sort by volumes if prices are identical.
   if (difference === 0) {
-    const quantityA = a.price.base.quantity;
-    const quantityB = b.price.base.quantity;
+    const quantityA = a.trade.base.quantity;
+    const quantityB = b.trade.base.quantity;
     return parseFloat(subtract(quantityA, quantityB).toString());
   }
 
@@ -61,10 +61,10 @@ export const reduceOrderVolumes = (
   order: Order,
   index: number,
 ) => {
-  const tokenPath = ['price', 'base', 'token'];
+  const tokenPath = ['trade', 'base', 'token'];
   const token = R.path(tokenPath, order) as TokenInterface;
 
-  const volumePath = ['price', 'base', 'quantity'];
+  const volumePath = ['trade', 'base', 'quantity'];
   const volume = R.path(volumePath, order) as BigInteger;
 
   const previousPath = [index - 1, 'cummulative', 'quantity'];

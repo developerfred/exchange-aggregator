@@ -39,12 +39,13 @@ export const fetch = async (
     (order: OasisDexOrder): Order => {
       const key = `${Exchange.OASIS_DEX}:${OrderType.BID}:${order.id}`;
       const id = Buffer.from(key).toString('base64');
+      const trade = createPrice(order.buy, order.sell);
 
       return {
         id,
         exchange: Exchange.OASIS_DEX,
         type: OrderType.BID,
-        price: createPrice(order.buy, order.sell),
+        trade,
         original: {
           id: order.id,
         },
@@ -56,12 +57,13 @@ export const fetch = async (
     (order: OasisDexOrder): Order => {
       const key = `${Exchange.OASIS_DEX}:${OrderType.ASK}:${order.id}`;
       const id = Buffer.from(key).toString('base64');
+      const trade = createPrice(order.sell, order.buy);
 
       return {
         id,
         exchange: Exchange.OASIS_DEX,
         type: OrderType.ASK,
-        price: createPrice(order.sell, order.buy),
+        trade,
         original: {
           id: order.id,
         },

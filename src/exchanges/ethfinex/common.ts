@@ -19,14 +19,15 @@ export const normalizeOrder = (
 ) => {
   const [, price, amount] = order;
   const volume = Math.abs(amount);
+  const trade = createPrice(
+    createQuantity(options.pair.base, volume),
+    createQuantity(options.pair.quote, price * volume),
+  );
 
   return {
     id,
     type: amount > 0 ? OrderType.BID : OrderType.ASK,
     exchange: Exchange.ETHFINEX,
-    price: createPrice(
-      createQuantity(options.pair.base, volume),
-      createQuantity(options.pair.quote, price * volume),
-    ),
+    trade,
   } as Order;
 };
