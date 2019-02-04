@@ -231,11 +231,12 @@ commander
       process.exit(1);
     }
 
-    const prefix = (options.network as string).toLowerCase();
-    const endpoint = `wss://${prefix}.melonport.com`;
+    // const prefix = (options.network as string).toLowerCase();
+    // const endpoint = `wss://${prefix}.melonport.com`;
+    const endpoint = 'ws://localhost:8545';
     const environment = await withDeployment(
       constructEnvironment({
-        track: Tracks.KYBER_PRICE,
+        track: Tracks.TESTING,
         endpoint,
       }),
     );

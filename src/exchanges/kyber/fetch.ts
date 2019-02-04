@@ -84,7 +84,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
         createQuantity(quote.token, multiply(quote.quantity, volume)),
       );
 
-      const pair = `${base.token.address}:${quote.token.address}`;
+      const pair = `${bid.base.token.address}:${bid.quote.token.address}`;
       const key = `${Exchange.KYBER_NETWORK}:${pair}:${volume}`;
       const id = Buffer.from(key).toString('base64');
 
