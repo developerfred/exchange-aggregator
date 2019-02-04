@@ -8,6 +8,7 @@ import {
   createPrice,
   multiply,
   isZero,
+  normalize,
 } from '@melonproject/token-math';
 
 export interface Currency {
@@ -73,12 +74,12 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
   ]);
 
   const bids = bidsResponse.map(
-    (price: PriceInterface, index): Order => {
+    (bid: PriceInterface, index): Order => {
       const volume = quantities[index];
-      const base = price.base;
-      const quote = price.quote;
-
-      const trade = createPrice(
+      const normalized = normalize(createPrice(bid.quote, bid.base));
+      const base = normalized.base;
+      const quote = normalized.quote;
+      const price = createPrice(
         createQuantity(base.token, multiply(base.quantity, volume)),
         createQuantity(quote.token, multiply(quote.quantity, volume)),
       );
@@ -91,17 +92,17 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
         id,
         exchange: Exchange.KYBER_NETWORK,
         type: OrderType.BID,
-        trade,
+        price,
       } as Order;
     },
   );
 
-  const asks = asksResponse.map((price: PriceInterface, index) => {
+  const asks = asksResponse.map((ask: PriceInterface, index) => {
     const volume = quantities[index];
-    const base = price.base;
-    const quote = price.quote;
+    const base = ask.base;
+    const quote = ask.quote;
 
-    const trade = createPrice(
+    const price = createPrice(
       createQuantity(base.token, multiply(base.quantity, volume)),
       createQuantity(quote.token, multiply(quote.quantity, volume)),
     );
@@ -114,7 +115,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
       id,
       exchange: Exchange.KYBER_NETWORK,
       type: OrderType.ASK,
-      trade,
+      price,
     } as Order;
   });
 

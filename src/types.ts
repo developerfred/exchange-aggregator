@@ -32,7 +32,7 @@ export interface Options {
 export interface Order {
   id: string;
   type: OrderType;
-  trade: PriceInterface;
+  price: PriceInterface;
   exchange: Exchange;
   cummulative?: QuantityInterface;
   original?: any;

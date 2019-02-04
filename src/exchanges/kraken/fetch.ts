@@ -24,16 +24,14 @@ const normalizeOrder = (
     `${Exchange.KRAKEN}:${price}:${volume}:${timestamp}`,
   ).toString('base64');
 
-  const trade = createPrice(
-    createQuantity(options.pair.base, volume),
-    createQuantity(options.pair.quote, price * volume),
-  );
-
   return {
     id: oid,
     exchange: Exchange.KRAKEN,
     type,
-    trade,
+    price: createPrice(
+      createQuantity(options.pair.base, volume),
+      createQuantity(options.pair.quote, price * volume),
+    ),
   };
 };
 

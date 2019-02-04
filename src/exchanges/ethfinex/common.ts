@@ -24,7 +24,7 @@ export const normalizeOrder = (
     id,
     type: amount > 0 ? OrderType.BID : OrderType.ASK,
     exchange: Exchange.ETHFINEX,
-    trade: createPrice(
+    price: createPrice(
       createQuantity(options.pair.base, volume),
       createQuantity(options.pair.quote, price * volume),
     ),

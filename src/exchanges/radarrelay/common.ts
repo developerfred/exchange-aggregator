@@ -49,7 +49,7 @@ export const normalizeOrder = (
     id: oid,
     exchange: Exchange.RADAR_RELAY,
     type: (order.type as any) as OrderType,
-    trade: price,
+    price,
     original: order,
   };
 };

@@ -131,16 +131,16 @@ const watch = async (options: Options, exchanges: Exchange[]) => {
       orderbook => {
         const bids = new Table(style);
         orderbook.bids.forEach(value => {
-          const price = displayPrice(value.trade);
-          const volume = displayVolume(value.trade.base);
+          const price = displayPrice(value.price);
+          const volume = displayVolume(value.price.base);
           const cummulative = displayVolume(value.cummulative);
           bids.push([value.id, value.exchange, price, volume, cummulative]);
         });
 
         const asks = new Table(style);
         orderbook.asks.forEach(value => {
-          const price = displayPrice(value.trade);
-          const volume = displayVolume(value.trade.base);
+          const price = displayPrice(value.price);
+          const volume = displayVolume(value.price.base);
           const cummulative = displayVolume(value.cummulative);
           asks.push([value.id, value.exchange, price, volume, cummulative]);
         });
@@ -177,16 +177,16 @@ const fetch = async (options: Options, exchanges: Exchange[]) => {
 
   const bids = new Table(style);
   orderbook.bids.forEach(value => {
-    const price = displayPrice(value.trade);
-    const volume = displayVolume(value.trade.base);
+    const price = displayPrice(value.price);
+    const volume = displayVolume(value.price.base);
     const cummulative = displayVolume(value.cummulative);
     bids.push([value.id, value.exchange, price, volume, cummulative]);
   });
 
   const asks = new Table(style);
   orderbook.asks.forEach(value => {
-    const price = displayPrice(value.trade);
-    const volume = displayVolume(value.trade.base);
+    const price = displayPrice(value.price);
+    const volume = displayVolume(value.price.base);
     const cummulative = displayVolume(value.cummulative);
     asks.push([value.id, value.exchange, price, volume, cummulative]);
   });
