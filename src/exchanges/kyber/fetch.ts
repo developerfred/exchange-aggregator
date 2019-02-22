@@ -39,8 +39,8 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
   const bidsPromise = Promise.all(
     bidQuantities.map(quantity => {
       return getExpectedRate(environment, proxy, {
-        takerAsset: options.pair.quote,
-        makerAsset: options.pair.base,
+        makerAsset: options.pair.quote,
+        takerAsset: options.pair.base,
         fillTakerQuantity: quantity,
       });
     }),
@@ -57,8 +57,8 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
   const asksPromise = Promise.all(
     askQuantities.map(quantity => {
       return getExpectedRate(environment, proxy, {
-        takerAsset: options.pair.base,
-        makerAsset: options.pair.quote,
+        makerAsset: options.pair.base,
+        takerAsset: options.pair.quote,
         fillTakerQuantity: quantity,
       });
     }),
@@ -76,15 +76,14 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
   const bids = bidsResponse.map(
     (bid: PriceInterface, index): Order => {
       const volume = quantities[index];
-      const normalized = normalize(createPrice(bid.quote, bid.base));
-      const base = normalized.base;
-      const quote = normalized.quote;
+      const base = bid.base;
+      const quote = bid.quote;
       const trade = createPrice(
         createQuantity(base.token, multiply(base.quantity, volume)),
         createQuantity(quote.token, multiply(quote.quantity, volume)),
       );
 
-      const pair = `${bid.base.token.address}:${bid.quote.token.address}`;
+      const pair = `${base.token.address}:${quote.token.address}`;
       const key = `${Exchange.KYBER_NETWORK}:${pair}:${volume}`;
       const id = Buffer.from(key).toString('base64');
 
@@ -99,14 +98,15 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
 
   const asks = asksResponse.map((ask: PriceInterface, index) => {
     const volume = quantities[index];
-    const base = ask.base;
-    const quote = ask.quote;
+    const normalized = normalize(createPrice(ask.quote, ask.base));
+    const base = normalized.base;
+    const quote = normalized.quote;
     const trade = createPrice(
       createQuantity(base.token, multiply(base.quantity, volume)),
       createQuantity(quote.token, multiply(quote.quantity, volume)),
     );
 
-    const pair = `${base.token.address}:${quote.token.address}`;
+    const pair = `${ask.base.token.address}:${ask.quote.token.address}`;
     const key = `${Exchange.KYBER_NETWORK}:${pair}:${volume}`;
     const id = Buffer.from(key).toString('base64');
 
