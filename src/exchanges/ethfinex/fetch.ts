@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Network, Order } from '../../types';
-import { EthfinexOrder, normalizeOrder, wethToEth, orderId } from './common';
+import { EthfinexOrder, normalizeOrder, orderId } from './common';
 import { Ethfinex } from './types';
+import { wethToEth } from '../../utils/wethToEth';
 
 const getHttpUrl = (options: Ethfinex.FetchOptions) => {
   const base = wethToEth(options.pair.base.symbol);
@@ -10,8 +11,10 @@ const getHttpUrl = (options: Ethfinex.FetchOptions) => {
   switch (options.network) {
     case Network.MAINNET:
       return `https://api.ethfinex.com/v2/book/t${base}${quote}/R0`;
-    default:
+    case Network.KOVAN:
       return `https://kovan.api.ethfinex.com/v2/book/t${base}${quote}/R0`;
+    default:
+      throw new Error('Invalid network.');
   }
 };
 

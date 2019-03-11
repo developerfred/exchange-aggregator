@@ -4,8 +4,6 @@ import { Ethfinex } from './types';
 
 export type EthfinexOrder = [number, number, number];
 
-export const wethToEth = (token: string) => token.replace(/^WETH$/, 'ETH');
-
 export const orderId = (order: EthfinexOrder) => {
   const [id] = order;
   const key = `${Exchange.ETHFINEX}:${id}`;

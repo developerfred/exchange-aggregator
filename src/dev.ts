@@ -15,6 +15,9 @@ import {
 } from '@melonproject/token-math';
 import { OasisDex } from './exchanges/oasisdex/types';
 import { Kyber } from './exchanges/kyber/types';
+import { Kraken } from './exchanges/kraken/types';
+import { Ethfinex } from './exchanges/ethfinex/types';
+import { RadarRelay } from './exchanges/radarrelay/types';
 
 const debug = require('debug')('exchange-aggregator');
 
@@ -55,16 +58,16 @@ const displayVolume = (quantity: QuantityInterface) => {
 
 const exchangeOrderObservableCreators = {
   [Exchange.RADAR_RELAY]: async (options: Options) => {
-    return exchanges.radarrelay.watch(options);
+    return exchanges.radarrelay.watch(options as RadarRelay.WatchOptions);
   },
   [Exchange.KRAKEN]: async (options: Options) => {
-    return exchanges.kraken.watch(options);
+    return exchanges.kraken.watch(options as Kraken.WatchOptions);
   },
   [Exchange.KYBER_NETWORK]: async (options: Options) => {
     return exchanges.kyber.watch(options as Kyber.WatchOptions);
   },
   [Exchange.ETHFINEX]: async (options: Options) => {
-    return exchanges.ethfinex.watch(options);
+    return exchanges.ethfinex.watch(options as Ethfinex.WatchOptions);
   },
   [Exchange.OASIS_DEX]: async (options: Options) => {
     return exchanges.oasisdex.watch(options as OasisDex.WatchOptions);
@@ -73,16 +76,16 @@ const exchangeOrderObservableCreators = {
 
 const exchangeOrderFetcherCreators = {
   [Exchange.RADAR_RELAY]: async (options: Options) => {
-    return exchanges.radarrelay.fetch(options);
+    return exchanges.radarrelay.fetch(options as RadarRelay.FetchOptions);
   },
   [Exchange.KRAKEN]: async (options: Options) => {
-    return exchanges.kraken.fetch(options);
+    return exchanges.kraken.fetch(options as Kraken.FetchOptions);
   },
   [Exchange.KYBER_NETWORK]: async (options: Options) => {
     return exchanges.kyber.fetch(options as Kyber.FetchOptions);
   },
   [Exchange.ETHFINEX]: async (options: Options) => {
-    return exchanges.ethfinex.fetch(options);
+    return exchanges.ethfinex.fetch(options as Ethfinex.FetchOptions);
   },
   [Exchange.OASIS_DEX]: async (options: Options) => {
     return exchanges.oasisdex.fetch(options as OasisDex.FetchOptions);
@@ -231,12 +234,11 @@ commander
       process.exit(1);
     }
 
-    // const prefix = (options.network as string).toLowerCase();
-    // const endpoint = `wss://${prefix}.melonport.com`;
-    const endpoint = 'ws://localhost:8545';
+    const prefix = (options.network as string).toLowerCase();
+    const endpoint = `wss://${prefix}.melonport.com`;
     const environment = await withDeployment(
       constructEnvironment({
-        track: Tracks.TESTING,
+        track: Tracks.KYBER_PRICE,
         endpoint,
       }),
     );

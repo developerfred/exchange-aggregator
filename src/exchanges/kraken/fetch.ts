@@ -1,11 +1,12 @@
 import axios from 'axios';
-import { Order, OrderType, Network, Exchange } from '../../types';
-import { createPrice, createQuantity } from '@melonproject/token-math';
+import { Order, OrderType, Network } from '../../types';
 import { Kraken } from './types';
+import { KrakenOrder, normalizeOrder } from './common';
+import { wethToEth } from '../../utils/wethToEth';
 
 interface KrakenOrderbook {
-  asks: [number, number, number][];
-  bids: [number, number, number][];
+  asks: KrakenOrder[];
+  bids: KrakenOrder[];
 }
 
 interface KrakenResponse {
@@ -15,31 +16,9 @@ interface KrakenResponse {
   };
 }
 
-const normalizeOrder = (
-  options: Kraken.Options,
-  type: OrderType,
-  [price, volume, timestamp]: [number, number, number],
-): Order => {
-  const oid = Buffer.from(
-    `${Exchange.KRAKEN}:${price}:${volume}:${timestamp}`,
-  ).toString('base64');
-
-  const trade = createPrice(
-    createQuantity(options.pair.base, volume),
-    createQuantity(options.pair.quote, price * volume),
-  );
-
-  return {
-    id: oid,
-    exchange: Exchange.KRAKEN,
-    type,
-    trade,
-  };
-};
-
 const getHttpUrl = (options: Kraken.FetchOptions) => {
-  const base = options.pair.base.symbol;
-  const quote = options.pair.quote.symbol;
+  const base = wethToEth(options.pair.base.symbol);
+  const quote = wethToEth(options.pair.quote.symbol);
 
   switch (options.network) {
     case Network.MAINNET:

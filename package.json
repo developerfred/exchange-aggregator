@@ -35,7 +35,7 @@
     "postbuild": "yarn bundle",
     "bundle": "rollup -c",
     "clean": "rimraf lib && rimraf coverage",
-    "dev": "ts-node-dev src/dev orders",
+    "dev": "ts-node-dev --transpileOnly src/dev orders",
     "format": "prettier --write src/{*,**/*}.ts",
     "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
     "lint:tslint": "tsc --noEmit && tslint src/{*,**/*}.ts",
@@ -68,7 +68,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/protocol": "^0.9.24",
+    "@melonproject/protocol": "^1.0.3",
     "@melonproject/token-math": "^0.1.6",
     "@radarrelay/types": "^1.2.1",
     "axios": "^0.18.0",

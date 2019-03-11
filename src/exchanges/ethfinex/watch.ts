@@ -12,9 +12,10 @@ import {
   SetOrderMessage,
 } from '../../types';
 import * as debug from '../../debug';
-import { EthfinexOrder, normalizeOrder, wethToEth, orderId } from './common';
+import { EthfinexOrder, normalizeOrder, orderId } from './common';
 import { Ethfinex } from './types';
 import { cleanEvents } from '../../utils/cleanEvents';
+import { wethToEth } from '../../utils/wethToEth';
 
 interface SubscribeMessage {
   event: 'subscribe';
@@ -41,8 +42,10 @@ const getWebsocketUrl = (options: Ethfinex.WatchOptions) => {
   switch (options.network) {
     case Network.MAINNET:
       return 'wss://api.ethfinex.com/ws/2';
-    default:
+    case Network.KOVAN:
       return 'wss://kovan.api.ethfinex.com/ws/2';
+    default:
+      throw new Error('Invalid network.');
   }
 };
 
