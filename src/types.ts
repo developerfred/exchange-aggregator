@@ -54,8 +54,6 @@ export type AnyOrderMessage =
   | RemoveOrderMessage
   | SnapshotMessage;
 
-export type SingularOrderMessage = SetOrderMessage | RemoveOrderMessage;
-
 export interface OrderMessage {
   event: NormalizedMessageType;
   quote: TokenInterface;

@@ -8,12 +8,11 @@ import {
   RemoveOrderMessage,
   Order,
   AnyOrderMessage,
-  SingularOrderMessage,
 } from '../types';
 
 export const cleanEvents = (
   initial: Order[] = [],
-): OperatorFunction<AnyOrderMessage, SingularOrderMessage> => (
+): OperatorFunction<AnyOrderMessage, AnyOrderMessage> => (
   source: Observable<AnyOrderMessage>,
 ) => {
   return new Observable(observer => {
@@ -24,37 +23,39 @@ export const cleanEvents = (
         if (message.event === NormalizedMessageType.SNAPSHOT) {
           const snapshot = message as SnapshotMessage;
 
-          snapshot.orders.forEach(current => {
-            if (!orders.find(R.equals(current))) {
-              observer.next({
-                event: NormalizedMessageType.SET,
-                exchange: snapshot.exchange,
-                network: snapshot.network,
-                base: snapshot.base,
-                quote: snapshot.quote,
-                id: current.id,
-                order: current,
-              });
-            }
-          });
+          if (!orders || !orders.length) {
+            observer.next(message);
+          } else {
+            snapshot.orders.forEach(current => {
+              if (!orders.find(R.equals(current))) {
+                observer.next({
+                  event: NormalizedMessageType.SET,
+                  exchange: snapshot.exchange,
+                  network: snapshot.network,
+                  base: snapshot.base,
+                  quote: snapshot.quote,
+                  id: current.id,
+                  order: current,
+                });
+              }
+            });
 
-          orders.forEach(current => {
-            if (!snapshot.orders.find(R.propEq('id', current.id))) {
-              observer.next({
-                event: NormalizedMessageType.REMOVE,
-                exchange: snapshot.exchange,
-                network: snapshot.network,
-                base: snapshot.base,
-                quote: snapshot.quote,
-                id: current.id,
-              });
-            }
-          });
+            orders.forEach(current => {
+              if (!snapshot.orders.find(R.propEq('id', current.id))) {
+                observer.next({
+                  event: NormalizedMessageType.REMOVE,
+                  exchange: snapshot.exchange,
+                  network: snapshot.network,
+                  base: snapshot.base,
+                  quote: snapshot.quote,
+                  id: current.id,
+                });
+              }
+            });
+          }
 
           orders = snapshot.orders;
-        }
-
-        if (message.event === NormalizedMessageType.SET) {
+        } else if (message.event === NormalizedMessageType.SET) {
           const add = message as SetOrderMessage;
           if (!orders.find(R.equals(add.order))) {
             orders.push(add.order);
@@ -62,9 +63,7 @@ export const cleanEvents = (
           } else {
             debug.log('Filtered event: Set order %s.', add.id);
           }
-        }
-
-        if (message.event === NormalizedMessageType.REMOVE) {
+        } else if (message.event === NormalizedMessageType.REMOVE) {
           const remove = message as RemoveOrderMessage;
           const before = orders.length;
           orders = orders.filter(
