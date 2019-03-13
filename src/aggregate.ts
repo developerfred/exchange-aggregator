@@ -4,7 +4,7 @@ import {
   Options,
   SnapshotMessage,
   NormalizedMessageType,
-  OrderType,
+  AskOrBid,
   RemoveOrderMessage,
   SetOrderMessage,
   AnyOrderMessage,
@@ -18,8 +18,8 @@ import {
   BigInteger,
 } from '@melonproject/token-math';
 
-export const isBidOrder = R.propEq('type', OrderType.BID);
-export const isAskOrder = R.propEq('type', OrderType.ASK);
+export const isBidOrder = R.propEq('type', AskOrBid.BID);
+export const isAskOrder = R.propEq('type', AskOrBid.ASK);
 
 export const createOrderbook = (options: Options, orders: Order[]) => {
   const asks = orders

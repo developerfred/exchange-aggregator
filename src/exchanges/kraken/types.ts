@@ -8,4 +8,14 @@ export namespace Kraken {
   export interface WatchOptions extends Options {}
 
   export interface FetchOptions extends Options {}
+
+  export interface TradeOptions {
+    auth: Authentication;
+    nonce?: any;
+  }
+
+  export interface Authentication {
+    key: string;
+    secret: string;
+  }
 }

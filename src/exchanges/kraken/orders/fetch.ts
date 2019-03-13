@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { Order, OrderType, Network } from '../../types';
-import { Kraken } from './types';
+import { Order, AskOrBid, Network } from '../../../types';
+import { Kraken } from '../types';
 import { KrakenOrder, normalizeOrder } from './common';
-import { wethToEth } from '../../utils/wethToEth';
+import { wethToEth } from '../../../utils/wethToEth';
 
 interface KrakenOrderbook {
   asks: KrakenOrder[];
@@ -48,11 +48,11 @@ export const fetch = async (options: Kraken.FetchOptions): Promise<Order[]> => {
   };
 
   const asks = orderbook.asks.map(order =>
-    normalizeOrder(options, OrderType.ASK, order),
+    normalizeOrder(options, AskOrBid.ASK, order),
   );
 
   const bids = orderbook.bids.map(order =>
-    normalizeOrder(options, OrderType.BID, order),
+    normalizeOrder(options, AskOrBid.BID, order),
   );
 
   return [].concat(asks, bids);

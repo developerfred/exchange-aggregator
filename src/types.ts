@@ -31,7 +31,7 @@ export interface Options {
 
 export interface Order {
   id: string;
-  type: OrderType;
+  type: AskOrBid;
   trade: PriceInterface;
   exchange: Exchange;
   cummulative?: QuantityInterface;
@@ -44,9 +44,19 @@ export enum NormalizedMessageType {
   'SNAPSHOT' = 'SNAPSHOT',
 }
 
-export enum OrderType {
+export enum AskOrBid {
   'ASK' = 'ASK',
   'BID' = 'BID',
+}
+
+export enum BuyOrSell {
+  'BUY' = 'BUY',
+  'SELL' = 'SELL',
+}
+
+export enum OrderType {
+  'MARKET' = 'MARKET',
+  'LIMIT' = 'LIMIT',
 }
 
 export type AnyOrderMessage =
@@ -84,4 +94,14 @@ export interface Orderbook {
   network: Network;
   bids: Order[];
   asks: Order[];
+}
+
+export interface Trade {
+  network: Network;
+  exchange: Exchange;
+  pair: AssetPair;
+  type: OrderType;
+  side: BuyOrSell;
+  volume: string;
+  price?: string;
 }

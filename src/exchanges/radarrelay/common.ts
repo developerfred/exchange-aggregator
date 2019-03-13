@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { RadarRelay } from './types';
-import { Order, OrderType, Exchange, Network } from '../../types';
+import { Order, AskOrBid, Exchange, Network } from '../../types';
 import { createPrice, createQuantity } from '@melonproject/token-math';
 import { RadarSignedOrder, RadarBook } from '@radarrelay/types';
 
@@ -48,7 +48,7 @@ export const normalizeOrder = (
   return {
     id: oid,
     exchange: Exchange.RADAR_RELAY,
-    type: (order.type as any) as OrderType,
+    type: (order.type as any) as AskOrBid,
     trade,
     original: order,
   };

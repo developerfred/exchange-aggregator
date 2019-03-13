@@ -35,7 +35,7 @@
     "postbuild": "yarn bundle",
     "bundle": "rollup -c",
     "clean": "rimraf lib && rimraf coverage",
-    "dev": "ts-node-dev --transpileOnly src/dev orders",
+    "dev": "ts-node-dev --transpileOnly src/dev",
     "format": "prettier --write src/{*,**/*}.ts",
     "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
     "lint:tslint": "tsc --noEmit && tslint src/{*,**/*}.ts",
@@ -46,6 +46,7 @@
     "test:watch": "yarn test --watch"
   },
   "devDependencies": {
+    "@types/crypto-js": "^3.1.43",
     "@types/jest": "^23.3.9",
     "@types/node": "^10.12.10",
     "@types/ramda": "^0.25.44",
@@ -72,7 +73,9 @@
     "@melonproject/token-math": "^0.1.6",
     "@radarrelay/types": "^1.2.1",
     "axios": "^0.18.0",
+    "crypto-js": "^3.1.9-1",
     "isomorphic-ws": "^4.0.1",
+    "qs": "^6.6.0",
     "ramda": "^0.26.1",
     "rxjs": "^6.3.3"
   },

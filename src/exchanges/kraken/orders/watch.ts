@@ -10,13 +10,13 @@ import {
   NormalizedMessageType,
   SnapshotMessage,
   SetOrderMessage,
-  OrderType,
+  AskOrBid,
   Order,
-} from '../../types';
-import * as debug from '../../debug';
-import { Kraken } from './types';
-import { cleanEvents } from '../../utils/cleanEvents';
-import { wethToEth } from '../../utils/wethToEth';
+} from '../../../types';
+import * as debug from '../../../debug';
+import { Kraken } from '../types';
+import { cleanEvents } from '../../../utils/cleanEvents';
+import { wethToEth } from '../../../utils/wethToEth';
 import { KrakenOrder, normalizeOrder } from './common';
 import { isZero } from '@melonproject/token-math';
 
@@ -58,11 +58,11 @@ const normalizeUpdateEvent = (
   message: KrakenUpdateMessage,
 ) => {
   const bids = !!message.b
-    ? message.b.map(order => normalizeOrder(options, OrderType.BID, order))
+    ? message.b.map(order => normalizeOrder(options, AskOrBid.BID, order))
     : [];
 
   const asks = !!message.a
-    ? message.a.map(order => normalizeOrder(options, OrderType.ASK, order))
+    ? message.a.map(order => normalizeOrder(options, AskOrBid.ASK, order))
     : [];
 
   return ([].concat(bids, asks) as Order[]).map(order => {
@@ -94,11 +94,11 @@ const normalizeSnapshotEvent = (
   message: KrakenSnapshotMessage,
 ) => {
   const bids = !!message.bs
-    ? message.bs.map(order => normalizeOrder(options, OrderType.BID, order))
+    ? message.bs.map(order => normalizeOrder(options, AskOrBid.BID, order))
     : [];
 
   const asks = !!message.as
-    ? message.as.map(order => normalizeOrder(options, OrderType.ASK, order))
+    ? message.as.map(order => normalizeOrder(options, AskOrBid.ASK, order))
     : [];
 
   return {

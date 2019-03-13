@@ -1,6 +1,6 @@
 import * as R from 'ramda';
 import { Kyber } from './types';
-import { Order, Exchange, OrderType } from '../../types';
+import { Order, Exchange, AskOrBid } from '../../types';
 import { getExpectedRate } from '@melonproject/protocol';
 import {
   createQuantity,
@@ -90,7 +90,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
       return {
         id,
         exchange: Exchange.KYBER_NETWORK,
-        type: OrderType.BID,
+        type: AskOrBid.BID,
         trade,
       } as Order;
     },
@@ -113,7 +113,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
     return {
       id,
       exchange: Exchange.KYBER_NETWORK,
-      type: OrderType.ASK,
+      type: AskOrBid.ASK,
       trade,
     } as Order;
   });

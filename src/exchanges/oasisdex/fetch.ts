@@ -1,6 +1,6 @@
 import * as R from 'ramda';
 import { getActiveOasisDexOrders } from '@melonproject/protocol';
-import { Order, Exchange, OrderType } from '../../types';
+import { Order, Exchange, AskOrBid } from '../../types';
 import { QuantityInterface, createPrice } from '@melonproject/token-math';
 import { OasisDex } from './types';
 
@@ -37,14 +37,14 @@ export const fetch = async (
 
   const bids = bidsResponse.map(
     (order: OasisDexOrder): Order => {
-      const key = `${Exchange.OASIS_DEX}:${OrderType.BID}:${order.id}`;
+      const key = `${Exchange.OASIS_DEX}:${AskOrBid.BID}:${order.id}`;
       const id = Buffer.from(key).toString('base64');
       const trade = createPrice(order.buy, order.sell);
 
       return {
         id,
         exchange: Exchange.OASIS_DEX,
-        type: OrderType.BID,
+        type: AskOrBid.BID,
         trade,
         original: {
           id: order.id,
@@ -55,14 +55,14 @@ export const fetch = async (
 
   const asks = asksResponse.map(
     (order: OasisDexOrder): Order => {
-      const key = `${Exchange.OASIS_DEX}:${OrderType.ASK}:${order.id}`;
+      const key = `${Exchange.OASIS_DEX}:${AskOrBid.ASK}:${order.id}`;
       const id = Buffer.from(key).toString('base64');
       const trade = createPrice(order.sell, order.buy);
 
       return {
         id,
         exchange: Exchange.OASIS_DEX,
-        type: OrderType.ASK,
+        type: AskOrBid.ASK,
         trade,
         original: {
           id: order.id,
