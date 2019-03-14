@@ -47,7 +47,7 @@ export const add = async (trade: Trade, options: Kraken.TradeOptions) => {
       throw new Error(response.error);
     }
 
-    return response;
+    return response.result;
   } catch (e) {
     const error = new Error('Failed to execute request on exchange.');
     (error as any).original = e;
