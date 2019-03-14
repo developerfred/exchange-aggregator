@@ -1,7 +1,6 @@
 import axios from 'axios';
-import crypto from 'crypto';
 import qs from 'qs';
-import { getHttpPrefix } from '../common';
+import { getHttpPrefix, generateSignature } from '../common';
 import { Trade, OrderType } from '../../../types';
 import { Kraken } from '../types';
 
@@ -13,23 +12,6 @@ interface TradeData {
   volume: string;
   price?: string;
 }
-
-const generateSignature = (
-  data: TradeData,
-  path: string,
-  secret: string,
-  nonce: any,
-) => {
-  const secretBuffer = new Buffer(secret, 'base64');
-  const hash = crypto.createHash('sha256');
-  const hmac = crypto.createHmac('sha512', secretBuffer);
-  const hashDigest = hash.update(nonce + data).digest('binary' as any);
-  const hmacDigest = hmac
-    .update(path + hashDigest, 'binary' as any)
-    .digest('base64');
-
-  return hmacDigest;
-};
 
 export const add = async (trade: Trade, options: Kraken.TradeOptions) => {
   const path = '/0/private/AddOrder';
