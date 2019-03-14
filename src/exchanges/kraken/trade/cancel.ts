@@ -21,10 +21,24 @@ export const cancel = async (
   const key = options.auth.key;
   const secret = options.auth.secret;
   const signature = generateSignature(data, path, secret, nonce);
-  return axios.post(url, data, {
-    headers: {
-      'API-Key': key,
-      'API-Sign': signature,
-    },
-  });
+
+  try {
+    const response = (await axios.post(url, data, {
+      headers: {
+        'API-Key': key,
+        'API-Sign': signature,
+      },
+    })).data;
+
+    if (response.error && !!response.error.length) {
+      throw new Error(response.error);
+    }
+
+    return response.data;
+  } catch (e) {
+    const error = new Error('Failed to execute request on exchange.');
+    (error as any).original = e;
+
+    throw error;
+  }
 };
