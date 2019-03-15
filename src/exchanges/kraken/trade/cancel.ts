@@ -31,6 +31,14 @@ export const cancel = async (
     })).data;
 
     if (response.error && !!response.error.length) {
+      if (
+        !!(response.error as string[]).find(error => {
+          return error === 'EOrder:Unknown order';
+        })
+      ) {
+        return {};
+      }
+
       throw new Error(response.error);
     }
 
