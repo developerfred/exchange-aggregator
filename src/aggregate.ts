@@ -1,6 +1,6 @@
 import * as R from 'ramda';
 import {
-  Order,
+  OrderbookOrder,
   Options,
   SnapshotMessage,
   NormalizedMessageType,
@@ -21,7 +21,7 @@ import {
 export const isBidOrder = R.propEq('type', AskOrBid.BID);
 export const isAskOrder = R.propEq('type', AskOrBid.ASK);
 
-export const createOrderbook = (options: Options, orders: Order[]) => {
+export const createOrderbook = (options: Options, orders: OrderbookOrder[]) => {
   const asks = orders
     .filter(isAskOrder)
     .sort(sortOrders)
@@ -33,15 +33,15 @@ export const createOrderbook = (options: Options, orders: Order[]) => {
     .reduce(reduceOrderVolumes, []);
 
   return {
-    quote: options.pair.quote,
-    base: options.pair.quote,
+    quote: options.quote,
+    base: options.quote,
     network: options.network,
     asks,
     bids,
   };
 };
 
-export const sortOrders = (a: Order, b: Order) => {
+export const sortOrders = (a: OrderbookOrder, b: OrderbookOrder) => {
   const priceA = toAtomic(a.trade);
   const priceB = toAtomic(b.trade);
   const difference = parseFloat(subtract(priceB, priceA).toString());
@@ -57,8 +57,8 @@ export const sortOrders = (a: Order, b: Order) => {
 };
 
 export const reduceOrderVolumes = (
-  carry: Order[],
-  order: Order,
+  carry: OrderbookOrder[],
+  order: OrderbookOrder,
   index: number,
 ) => {
   const tokenPath = ['trade', 'base', 'token'];
@@ -83,7 +83,10 @@ export const reduceOrderVolumes = (
   return (carry || []).concat([current]);
 };
 
-export const reduceOrderEvents = (carry: Order[], current: AnyOrderMessage) => {
+export const reduceOrderEvents = (
+  carry: OrderbookOrder[],
+  current: AnyOrderMessage,
+) => {
   if (current.event === NormalizedMessageType.SNAPSHOT) {
     const snapshot = current as SnapshotMessage;
 

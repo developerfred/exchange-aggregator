@@ -3,9 +3,15 @@ import * as Rx from 'rxjs';
 import { scan, map, tap, catchError } from 'rxjs/operators';
 import Table from 'cli-table';
 import commander from 'commander';
-import { Exchange, Network, Options, Order, AnyOrderMessage } from './types';
+import {
+  Exchange,
+  Network,
+  Options,
+  OrderbookOrder,
+  AnyOrderMessage,
+} from './types';
 import { exchanges, createOrderbook, reduceOrderEvents } from './';
-import { constructEnvironment, getTokenBySymbol } from '@melonproject/protocol';
+import { constructEnvironment } from '@melonproject/protocol';
 import { withDeployment } from '@melonproject/protocol/lib/utils/environment/withDeployment';
 import { Tracks } from '@melonproject/protocol/lib/utils/environment/Environment';
 import {
@@ -106,7 +112,7 @@ const createExchangeOrderObservables = (
 const createExchangeOrderFetchers = (
   options: Options,
   exchanges: Exchange[],
-): Promise<Order[]>[] => {
+): Promise<OrderbookOrder[]>[] => {
   return exchanges.map(exchange => {
     return exchangeOrderFetcherCreators[exchange](options);
   });
@@ -243,15 +249,12 @@ commander
       }),
     );
 
-    const base = getTokenBySymbol(environment, options.base);
-    const quote = getTokenBySymbol(environment, options.quote);
-    const pair = { base, quote };
-
     const exchanges = args.length ? args : supported;
     const opts: Options = {
       network: (Network[options.network] as unknown) as Network,
       environment,
-      pair,
+      base: options.base,
+      quote: options.quote,
     };
 
     if (!!options.watch) {

@@ -42,8 +42,8 @@ interface UnsubscribeMessage {
 }
 
 const subscribeMessage = (options: Options, id: number) => {
-  const baseToken = options.pair.base.symbol;
-  const quoteToken = options.pair.quote.symbol;
+  const baseToken = options.base;
+  const quoteToken = options.quote;
   const message: SubscribeMessage = {
     type: WebsocketRequestType.SUBSCRIBE,
     topic: WebsocketRequestTopic.BOOK,
@@ -55,8 +55,8 @@ const subscribeMessage = (options: Options, id: number) => {
 };
 
 const unsubscribeMessage = (options: Options) => {
-  const baseToken = options.pair.base.symbol;
-  const quoteToken = options.pair.quote.symbol;
+  const baseToken = options.base;
+  const quoteToken = options.quote;
   const message: UnsubscribeMessage = {
     type: WebsocketRequestType.UNSUBSCRIBE,
     topic: WebsocketRequestTopic.BOOK,
@@ -77,8 +77,8 @@ const normalizeNewOrderEvent = (
     event: NormalizedMessageType.SET,
     exchange: Exchange.RADAR_RELAY,
     network: options.network,
-    base: options.pair.base,
-    quote: options.pair.quote,
+    base: options.base,
+    quote: options.quote,
     order: normalizeOrder(options, event.order),
   };
 };
@@ -94,8 +94,8 @@ const normalizeFillOrderEvent = (
     event: NormalizedMessageType.SET,
     exchange: Exchange.RADAR_RELAY,
     network: options.network,
-    base: options.pair.base,
-    quote: options.pair.quote,
+    base: options.base,
+    quote: options.quote,
     order: normalizeOrder(options, event.order),
   };
 };
@@ -107,8 +107,8 @@ const normalizeCancelOrderEvent = (
   event: NormalizedMessageType.REMOVE,
   exchange: Exchange.RADAR_RELAY,
   network: options.network,
-  base: options.pair.base,
-  quote: options.pair.quote,
+  base: options.base,
+  quote: options.quote,
   id: Buffer.from(event.orderHash).toString('base64'),
 });
 
@@ -119,8 +119,8 @@ const normalizeRemoveOrderEvent = (
   event: NormalizedMessageType.REMOVE,
   exchange: Exchange.RADAR_RELAY,
   network: options.network,
-  base: options.pair.base,
-  quote: options.pair.quote,
+  base: options.base,
+  quote: options.quote,
   id: Buffer.from(event.orderHash).toString('base64'),
 });
 
@@ -131,8 +131,8 @@ const normalizeSnapshotEvent = (
   event: NormalizedMessageType.SNAPSHOT,
   exchange: Exchange.RADAR_RELAY,
   network: options.network,
-  base: options.pair.base,
-  quote: options.pair.quote,
+  base: options.base,
+  quote: options.quote,
   orders: [].concat(
     book.asks.map(order => normalizeOrder(options, order)),
     book.bids.map(order => normalizeOrder(options, order)),
@@ -253,8 +253,8 @@ export const watch = (options: Options) => {
   const snapshot$ = ws$.pipe(
     filter(R.propEq('type', WebsocketRequestType.SUBSCRIBE)),
     tap(() => {
-      const base = options.pair.base.symbol;
-      const quote = options.pair.quote.symbol;
+      const base = options.base;
+      const quote = options.quote;
       debug.log(`Loading snapshot for market %s-%s.`, base, quote);
     }),
     switchMap(() => fetchRadarBook(options)),

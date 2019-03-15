@@ -18,18 +18,14 @@ export enum Network {
   'KOVAN' = 'KOVAN',
 }
 
-export interface AssetPair {
-  base: TokenInterface;
-  quote: TokenInterface;
-}
-
 export interface Options {
-  pair: AssetPair;
+  base: string;
+  quote: string;
   network: Network;
   environment?: Environment;
 }
 
-export interface Order {
+export interface OrderbookOrder {
   id: string;
   type: AskOrBid;
   trade: PriceInterface;
@@ -66,8 +62,8 @@ export type AnyOrderMessage =
 
 export interface OrderMessage {
   event: NormalizedMessageType;
-  quote: TokenInterface;
-  base: TokenInterface;
+  quote: string;
+  base: string;
   network: Network;
   exchange: Exchange;
 }
@@ -75,7 +71,7 @@ export interface OrderMessage {
 export interface SetOrderMessage extends OrderMessage {
   event: NormalizedMessageType.SET;
   id: string;
-  order: Order;
+  order: OrderbookOrder;
 }
 
 export interface RemoveOrderMessage extends OrderMessage {
@@ -85,23 +81,36 @@ export interface RemoveOrderMessage extends OrderMessage {
 
 export interface SnapshotMessage extends OrderMessage {
   event: NormalizedMessageType.SNAPSHOT;
-  orders: Order[];
+  orders: OrderbookOrder[];
 }
 
 export interface Orderbook {
   quote: TokenInterface;
   base: TokenInterface;
   network: Network;
-  bids: Order[];
-  asks: Order[];
+  bids: OrderbookOrder[];
+  asks: OrderbookOrder[];
+}
+
+export interface OrderRequest {
+  network: Network;
+  exchange: Exchange;
+  base: string;
+  quote: string;
+  type: OrderType;
+  side: BuyOrSell;
+  volume: string;
+  price?: string;
 }
 
 export interface Trade {
   network: Network;
   exchange: Exchange;
-  pair: AssetPair;
-  type: OrderType;
-  side: BuyOrSell;
-  volume: string;
-  price?: string;
+  base: string;
+  quote: string;
+  price: string;
+  type?: OrderType;
+  side?: BuyOrSell;
+  volume?: string;
+  time?: number;
 }

@@ -4,7 +4,7 @@ import {
   NormalizedMessageType,
   Exchange,
   SnapshotMessage,
-  Order,
+  OrderbookOrder,
 } from '../../types';
 import * as debug from '../../debug';
 import { Kyber } from './types';
@@ -13,13 +13,13 @@ import { cleanEvents } from '../../utils/cleanEvents';
 
 const createSnapshot = (
   options: Kyber.WatchOptions,
-  orders: Order[],
+  orders: OrderbookOrder[],
 ): SnapshotMessage => ({
   event: NormalizedMessageType.SNAPSHOT,
   exchange: Exchange.KYBER_NETWORK,
   network: options.network,
-  base: options.pair.base,
-  quote: options.pair.quote,
+  base: options.base,
+  quote: options.quote,
   orders,
 });
 

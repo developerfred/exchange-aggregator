@@ -1,7 +1,5 @@
-import axios from 'axios';
-import qs from 'qs';
-import { getHttpPrefix, generateSignature } from '../common';
-import { Trade, OrderType } from '../../../types';
+import { privateRequest } from '../common';
+import { OrderType, OrderRequest } from '../../../types';
 import { Kraken } from '../types';
 
 interface TradeData {
@@ -13,45 +11,23 @@ interface TradeData {
   price?: string;
 }
 
-export const add = async (trade: Trade, options: Kraken.TradeOptions) => {
-  const path = '/0/private/AddOrder';
-  const url = `${getHttpPrefix(trade.network)}${path}`;
-  const base = trade.pair.base;
-  const quote = trade.pair.quote;
-  const nonce = !!options.nonce ? options.nonce : Date.now() * 1000;
-
-  const data = qs.stringify({
-    nonce,
-    pair: `${base.symbol}${quote.symbol}`,
+export const add = async (trade: OrderRequest, auth: Kraken.Authentication) => {
+  const base = trade.base;
+  const quote = trade.quote;
+  const params = {
+    pair: `${base}${quote}`,
     type: trade.side.toLowerCase(),
     ordertype: trade.type.toLowerCase(),
     volume: trade.volume,
     ...(trade.type === OrderType.LIMIT && {
       price: trade.price,
     }),
-  } as TradeData);
+  } as TradeData;
 
-  const key = options.auth.key;
-  const secret = options.auth.secret;
-  const signature = generateSignature(data, path, secret, nonce);
-
-  try {
-    const response = (await axios.post(url, data, {
-      headers: {
-        'API-Key': key,
-        'API-Sign': signature,
-      },
-    })).data;
-
-    if (response.error && !!response.error.length) {
-      throw new Error(response.error);
-    }
-
-    return response.result;
-  } catch (e) {
-    const error = new Error('Failed to execute request on exchange.');
-    (error as any).original = e;
-
-    throw error;
+  const response = (await privateRequest('AddOrder', params, auth)).data;
+  if (response.error && !!response.error.length) {
+    throw new Error(response.error);
   }
+
+  return response.result;
 };

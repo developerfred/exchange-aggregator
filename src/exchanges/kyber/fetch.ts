@@ -1,7 +1,7 @@
 import * as R from 'ramda';
 import { Kyber } from './types';
-import { Order, Exchange, AskOrBid } from '../../types';
-import { getExpectedRate } from '@melonproject/protocol';
+import { OrderbookOrder, Exchange, AskOrBid } from '../../types';
+import { getExpectedRate, getTokenBySymbol } from '@melonproject/protocol';
 import {
   createQuantity,
   PriceInterface,
@@ -26,21 +26,26 @@ const proxyPath = [
   'kyberNetworkProxy',
 ];
 
-export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
+export const fetch = async (
+  options: Kyber.FetchOptions,
+): Promise<OrderbookOrder[]> => {
   const quantities = options.quantities || [1, 10, 100, 1000];
   const environment = options.environment;
   const deployment = environment.deployment;
   const proxy = R.path(proxyPath, deployment);
 
+  const quote = getTokenBySymbol(environment, options.quote);
+  const base = getTokenBySymbol(environment, options.base);
+
   const bidQuantities = quantities.map(quantity => {
-    return createQuantity(options.pair.quote, quantity);
+    return createQuantity(quote, quantity);
   });
 
   const bidsPromise = Promise.all(
     bidQuantities.map(quantity => {
       return getExpectedRate(environment, proxy, {
-        makerAsset: options.pair.quote,
-        takerAsset: options.pair.base,
+        makerAsset: quote,
+        takerAsset: base,
         fillTakerQuantity: quantity,
       });
     }),
@@ -51,14 +56,14 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
   );
 
   const askQuantities = quantities.map(quantity => {
-    return createQuantity(options.pair.base, quantity);
+    return createQuantity(base, quantity);
   });
 
   const asksPromise = Promise.all(
     askQuantities.map(quantity => {
       return getExpectedRate(environment, proxy, {
-        makerAsset: options.pair.base,
-        takerAsset: options.pair.quote,
+        makerAsset: base,
+        takerAsset: quote,
         fillTakerQuantity: quantity,
       });
     }),
@@ -74,7 +79,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
   ]);
 
   const bids = bidsResponse.map(
-    (bid: PriceInterface, index): Order => {
+    (bid: PriceInterface, index): OrderbookOrder => {
       const volume = quantities[index];
       const base = bid.base;
       const quote = bid.quote;
@@ -92,7 +97,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
         exchange: Exchange.KYBER_NETWORK,
         type: AskOrBid.BID,
         trade,
-      } as Order;
+      } as OrderbookOrder;
     },
   );
 
@@ -115,7 +120,7 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
       exchange: Exchange.KYBER_NETWORK,
       type: AskOrBid.ASK,
       trade,
-    } as Order;
+    } as OrderbookOrder;
   });
 
   return [].concat(bids, asks);

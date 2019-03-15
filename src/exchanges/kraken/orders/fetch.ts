@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Order, AskOrBid, Network } from '../../../types';
+import { OrderbookOrder, AskOrBid, Network } from '../../../types';
 import { Kraken } from '../types';
 import { KrakenOrder, normalizeOrder } from './common';
 import { wethToEth } from '../../../utils/wethToEth';
@@ -17,8 +17,8 @@ interface KrakenResponse {
 }
 
 const getHttpUrl = (options: Kraken.FetchOptions) => {
-  const base = wethToEth(options.pair.base.symbol);
-  const quote = wethToEth(options.pair.quote.symbol);
+  const base = wethToEth(options.base);
+  const quote = wethToEth(options.quote);
 
   switch (options.network) {
     case Network.MAINNET:
@@ -28,7 +28,9 @@ const getHttpUrl = (options: Kraken.FetchOptions) => {
   }
 };
 
-export const fetch = async (options: Kraken.FetchOptions): Promise<Order[]> => {
+export const fetch = async (
+  options: Kraken.FetchOptions,
+): Promise<OrderbookOrder[]> => {
   const url = getHttpUrl(options);
   const response = await axios
     .get(url)
@@ -39,8 +41,8 @@ export const fetch = async (options: Kraken.FetchOptions): Promise<Order[]> => {
   }
 
   const result = response.result;
-  const base = options.pair.base.symbol;
-  const quote = options.pair.quote.symbol;
+  const base = options.base;
+  const quote = options.quote;
   const key = `X${base}X${quote}`;
   const orderbook = (result && result[key]) || {
     asks: [],

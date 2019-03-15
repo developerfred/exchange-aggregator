@@ -1,4 +1,4 @@
-import { AskOrBid, Exchange, Order } from '../../types';
+import { AskOrBid, Exchange, OrderbookOrder } from '../../types';
 import { createQuantity, createPrice } from '@melonproject/token-math';
 import { Ethfinex } from './types';
 
@@ -18,8 +18,8 @@ export const normalizeOrder = (
   const [, price, amount] = order;
   const volume = Math.abs(amount);
   const trade = createPrice(
-    createQuantity(options.pair.base, volume),
-    createQuantity(options.pair.quote, price * volume),
+    createQuantity(options.base, volume),
+    createQuantity(options.quote, price * volume),
   );
 
   return {
@@ -27,5 +27,5 @@ export const normalizeOrder = (
     type: amount > 0 ? AskOrBid.BID : AskOrBid.ASK,
     exchange: Exchange.ETHFINEX,
     trade,
-  } as Order;
+  } as OrderbookOrder;
 };

@@ -26,8 +26,8 @@ interface SubscribeMessage {
 }
 
 const subscribeMessage = (options: Ethfinex.WatchOptions) => {
-  const base = wethToEth(options.pair.base.symbol);
-  const quote = wethToEth(options.pair.quote.symbol);
+  const base = wethToEth(options.base);
+  const quote = wethToEth(options.quote);
   const message: SubscribeMessage = {
     event: 'subscribe',
     channel: 'book',
@@ -62,8 +62,8 @@ const normalizeOrderEvent = (
       event: NormalizedMessageType.REMOVE,
       exchange: Exchange.ETHFINEX,
       network: options.network,
-      base: options.pair.base,
-      quote: options.pair.quote,
+      base: options.base,
+      quote: options.quote,
     } as RemoveOrderMessage;
   }
 
@@ -72,8 +72,8 @@ const normalizeOrderEvent = (
     event: NormalizedMessageType.SET,
     exchange: Exchange.ETHFINEX,
     network: options.network,
-    base: options.pair.base,
-    quote: options.pair.quote,
+    base: options.base,
+    quote: options.quote,
     order: normalizeOrder(options, order, id),
   } as SetOrderMessage;
 };
@@ -93,8 +93,8 @@ const normalizeSnapshotEvent = (
     event: NormalizedMessageType.SNAPSHOT,
     exchange: Exchange.ETHFINEX,
     network: options.network,
-    base: options.pair.base,
-    quote: options.pair.quote,
+    base: options.base,
+    quote: options.quote,
     orders: processed,
   } as SnapshotMessage;
 };

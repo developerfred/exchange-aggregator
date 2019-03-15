@@ -3,7 +3,7 @@ import { OasisDex } from './types';
 import { fetch } from './fetch';
 import {
   SnapshotMessage,
-  Order,
+  OrderbookOrder,
   NormalizedMessageType,
   Exchange,
 } from '../../types';
@@ -13,13 +13,13 @@ import * as debug from '../../debug';
 
 const createSnapshot = (
   options: OasisDex.WatchOptions,
-  orders: Order[],
+  orders: OrderbookOrder[],
 ): SnapshotMessage => ({
   event: NormalizedMessageType.SNAPSHOT,
   exchange: Exchange.OASIS_DEX,
   network: options.network,
-  base: options.pair.base,
-  quote: options.pair.quote,
+  base: options.base,
+  quote: options.quote,
   orders,
 });
 

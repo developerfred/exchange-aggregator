@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { RadarRelay } from './types';
-import { Order, AskOrBid, Exchange, Network } from '../../types';
+import { OrderbookOrder, AskOrBid, Exchange, Network } from '../../types';
 import { createPrice, createQuantity } from '@melonproject/token-math';
 import { RadarSignedOrder, RadarBook } from '@radarrelay/types';
 
@@ -8,8 +8,8 @@ import { RadarSignedOrder, RadarBook } from '@radarrelay/types';
 export const mlnToMlnt = (token: string) => token.replace(/^MLN$/, 'MLNT');
 
 export const getHttpUrl = (options: RadarRelay.Options) => {
-  const base = options.pair.base.symbol;
-  const quote = options.pair.quote.symbol;
+  const base = options.base;
+  const quote = options.quote;
 
   switch (options.network) {
     case Network.KOVAN: {
@@ -35,14 +35,14 @@ export const fetchRadarBook = (options: RadarRelay.Options) => {
 export const normalizeOrder = (
   options: RadarRelay.Options,
   order: RadarSignedOrder,
-): Order => {
+): OrderbookOrder => {
   const oid = Buffer.from(order.orderHash).toString('base64');
   const base = parseFloat((order.remainingBaseTokenAmount as any) as string);
   const quote = parseFloat((order.remainingQuoteTokenAmount as any) as string);
 
   const trade = createPrice(
-    createQuantity(options.pair.base, base),
-    createQuantity(options.pair.quote, quote),
+    createQuantity(options.base, base),
+    createQuantity(options.quote, quote),
   );
 
   return {

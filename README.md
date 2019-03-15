@@ -15,18 +15,12 @@ npm install @melonproject/exchange-aggregator
 Please note, that not all asset pairs are available on all exchanges.
 
 ```typescript
-import { createToken } from '@melonproject/token-math';
 import { Network, exchanges, aggregateOrders, createOrderbook } from '@melonproject/exchange-aggregator';
 
 const options = {
   network: Network.MAINNET,
-  pair: {
-    // The token pair is used for constructing the proper
-    // requests (e.g. endpoint urls) and calculations in
-    // token-math.
-    base: createToken('ZRX', undefined, 18),
-    quote: createToken('WETH', undefined, 18),
-  },
+  base: 'MLN',
+  quote: 'WETH',
 };
 
 const environment = constructEnvironment({

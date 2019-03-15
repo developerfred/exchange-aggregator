@@ -6,12 +6,12 @@ import {
   SnapshotMessage,
   SetOrderMessage,
   RemoveOrderMessage,
-  Order,
+  OrderbookOrder,
   AnyOrderMessage,
 } from '../types';
 
 export const cleanEvents = (
-  initial: Order[] = [],
+  initial: OrderbookOrder[] = [],
 ): OperatorFunction<AnyOrderMessage, AnyOrderMessage> => (
   source: Observable<AnyOrderMessage>,
 ) => {

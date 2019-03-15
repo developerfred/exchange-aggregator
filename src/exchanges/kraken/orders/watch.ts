@@ -11,7 +11,7 @@ import {
   SnapshotMessage,
   SetOrderMessage,
   AskOrBid,
-  Order,
+  OrderbookOrder,
 } from '../../../types';
 import * as debug from '../../../debug';
 import { Kraken } from '../types';
@@ -31,8 +31,8 @@ interface SubscribeMessage {
 }
 
 const subscribeMessage = (options: Kraken.WatchOptions) => {
-  const base = wethToEth(options.pair.base.symbol);
-  const quote = wethToEth(options.pair.quote.symbol);
+  const base = wethToEth(options.base);
+  const quote = wethToEth(options.quote);
   const message: SubscribeMessage = {
     event: 'subscribe',
     pair: [`${base}/${quote}`],
@@ -65,15 +65,15 @@ const normalizeUpdateEvent = (
     ? message.a.map(order => normalizeOrder(options, AskOrBid.ASK, order))
     : [];
 
-  return ([].concat(bids, asks) as Order[]).map(order => {
+  return ([].concat(bids, asks) as OrderbookOrder[]).map(order => {
     if (isZero(order.trade.base.quantity)) {
       return {
         id: order.id,
         event: NormalizedMessageType.REMOVE,
         exchange: Exchange.KRAKEN,
         network: options.network,
-        base: options.pair.base,
-        quote: options.pair.quote,
+        base: options.base,
+        quote: options.quote,
       } as RemoveOrderMessage;
     }
 
@@ -83,8 +83,8 @@ const normalizeUpdateEvent = (
       event: NormalizedMessageType.SET,
       exchange: Exchange.KRAKEN,
       network: options.network,
-      base: options.pair.base,
-      quote: options.pair.quote,
+      base: options.base,
+      quote: options.quote,
     } as SetOrderMessage;
   });
 };
@@ -105,8 +105,8 @@ const normalizeSnapshotEvent = (
     event: NormalizedMessageType.SNAPSHOT,
     exchange: Exchange.KRAKEN,
     network: options.network,
-    base: options.pair.base,
-    quote: options.pair.quote,
+    base: options.base,
+    quote: options.quote,
     orders: [].concat(bids, asks),
   } as SnapshotMessage;
 };

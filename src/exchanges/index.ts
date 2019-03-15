@@ -1,4 +1,8 @@
-import { orders, trade as krakenTrade } from './kraken';
+import {
+  orders,
+  trade as krakenTrade,
+  account as krakenAccount,
+} from './kraken';
 import { watch as watchEthfinex, fetch as fetchEthfinex } from './ethfinex';
 import { watch as watchKyber, fetch as fetchKyber } from './kyber';
 import { watch as watchOasisDex, fetch as fetchOasisDex } from './oasisdex';
@@ -17,6 +21,7 @@ export const kraken = {
   watch: orders.watch,
   fetch: orders.fetch,
   trade: krakenTrade,
+  account: krakenAccount,
 };
 
 export const oasisdex = {
