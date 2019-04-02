@@ -1,0 +1,68 @@
+{
+  "name": "@melonproject/ea-kraken",
+  "version": "2.0.0-alpha1",
+  "description": "Integration for the Kraken API.",
+  "main": "./lib/index.js",
+  "module": "./lib/bundle.esm.js",
+  "typings": "./lib/index.d.ts",
+  "author": "Melonport AG <team@melonport.com>",
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/melonproject/exchange-aggregator#readme",
+  "contributors": [
+    "Sebastian Siemssen <fubhy@fubhy.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/melonproject/exchange-aggregator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/melonproject/exchange-aggregator/issues"
+  },
+  "keywords": [
+    "ethereum",
+    "exchange",
+    "kraken"
+  ],
+  "files": [
+    "lib/"
+  ],
+  "scripts": {
+    "prepare": "yarn build",
+    "build": "tsc -p . && rollup -c",
+    "clean": "rimraf lib && rimraf coverage",
+    "watch": "tsc -w -p . & rollup -c -w",
+    "format": "prettier --write src/{*,**/*}.ts",
+    "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
+    "lint:tslint": "tsc --noEmit && tslint -c ../../tslint.json src/{*,**/*}.ts",
+    "lint": "yarn lint:tslint && yarn lint:prettier",
+    "test": "yarn jest",
+    "test:coverage": "yarn test --coverage",
+    "test:watch": "yarn test --watch"
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.9",
+    "@types/node": "^10.12.10",
+    "@types/ramda": "^0.25.44",
+    "debug": "^4.0.1",
+    "jest": "^23.6.0",
+    "lint-staged": "^7.3.0",
+    "prettier": "^1.14.3",
+    "rimraf": "^2.6.2",
+    "rollup": "^0.67.0",
+    "rollup-plugin-node-resolve": "^4.0.1",
+    "rollup-plugin-sourcemaps": "^0.4.2",
+    "ts-jest": "^23.10.5",
+    "ts-node-dev": "^1.0.0-pre.32",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.11.0",
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "^3.1.1"
+  },
+  "dependencies": {
+    "axios": "^0.18.0",
+    "isomorphic-ws": "^4.0.1",
+    "qs": "^6.6.0",
+    "ramda": "^0.26.1",
+    "rxjs": "^6.3.3"
+  }
+}
