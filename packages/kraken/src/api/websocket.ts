@@ -154,8 +154,8 @@ let counter = 0;
 export const subscribe = <T = SubscriptionMessage>(
   pair: string[],
   subscription: SubscriptionParams,
-): Rx.Observable<T> => {
-  let channels: string[] = [];
+): Rx.Observable<[string, T]> => {
+  let channels: { [key: string]: string } = {};
   const reqid = ++counter;
 
   const subMsg = () => ({
@@ -176,26 +176,33 @@ export const subscribe = <T = SubscriptionMessage>(
     if (message.event === 'subscriptionStatus') {
       const req = message.reqid && message.reqid === reqid;
       if (req && message.status === 'subscribed') {
-        channels = [...channels, message.channelID];
+        channels = {
+          ...channels,
+          [message.channelID]: message.pair,
+        };
       } else if (req && message.status === 'unsubscribed') {
-        channels = channels.filter(channel => channel !== message.channelID);
+        const { [message.channelID]: removed, ...rest } = channels;
+        channels = rest;
       }
 
       return true;
     }
 
-    return Array.isArray(message) && channels.indexOf(message[0]) !== -1;
+    return Array.isArray(message) && !!channels[message[0]];
   };
 
   const multiplex$ = connect().multiplex(subMsg, unsubMsg, filterFn);
   return multiplex$.pipe(
+    share(),
     tap(value => {
       if (value.status && value.status === 'error') {
         throw new Error(value.errorMessage);
       }
     }),
     filter(value => Array.isArray(value)),
-    map(value => value[1]),
-    share(),
+    map(value => {
+      const pair = channels[value[0]];
+      return [pair, value[1]] as [string, T];
+    }),
   );
 };
