@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs';
-import { map, tap, filter } from 'rxjs/operators';
+import { map, tap, filter, share } from 'rxjs/operators';
 import isomorphicWs from 'isomorphic-ws';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import * as debug from '../debug';
@@ -86,16 +86,26 @@ export type TradeMessage = [
 
 export type SpreadMessage = [string, string, string];
 
-export interface BookMessage {
-  as: [string, string, string];
-  bs: [string, string, string];
+export type BookItem = [string, string, string];
+
+export interface BookSnapshotMessage {
+  as?: BookItem[];
+  bs?: BookItem[];
 }
+
+export interface BookUpdateMessage {
+  a?: BookItem[];
+  b?: BookItem[];
+}
+
+export type BookMessage = BookSnapshotMessage | BookUpdateMessage;
 
 export type SubscriptionMessage =
   | OhlcMessage
   | TradeMessage
   | SpreadMessage
-  | BookMessage;
+  | BookSnapshotMessage
+  | BookUpdateMessage;
 
 export type RawSubscriptionMessage = [number, SubscriptionMessage];
 
@@ -186,5 +196,6 @@ export const subscribe = <T = SubscriptionMessage>(
     }),
     filter(value => Array.isArray(value)),
     map(value => value[1]),
+    share(),
   );
 };

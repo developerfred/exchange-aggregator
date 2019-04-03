@@ -11,6 +11,7 @@ function onwarn(message) {
 
 export const globals = {
   '@melonproject/ea-kraken': 'ea.kraken',
+  '@melonproject/ea-kyber': 'ea.kyber',
 };
 
 export default (name) => [
