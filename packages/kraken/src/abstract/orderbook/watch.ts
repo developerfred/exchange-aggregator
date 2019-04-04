@@ -8,7 +8,8 @@ import {
   BookUpdateMessage,
   BookMessage,
 } from '../../api/websocket';
-import { filter, map, share } from 'rxjs/operators';
+import { filter, map, share, switchMap } from 'rxjs/operators';
+import { toStandardPair, fromStandarPair } from '../mapping';
 
 export interface WatchOptions {
   depth?: SubscriptionParams['depth'];
@@ -37,7 +38,7 @@ const normalizeSnapshot = (
   ]);
 
   const items = [...asks, ...bids] as [BigNumber, BigNumber][];
-  return ['snapshot', pair, items];
+  return ['snapshot', toStandardPair(pair), items];
 };
 
 const isUpdate = R.compose(
@@ -60,14 +61,27 @@ const normalizeUpdate = (
   ]);
 
   const items = [...asks, ...bids] as [BigNumber, BigNumber][];
-  return ['update', pair, items];
+  return ['update', toStandardPair(pair), items];
 };
 
 export const watch = (pairs: string[], options?: WatchOptions) => {
-  const messages$ = subscribe<BookMessage>(pairs, {
-    ...options,
-    name: 'book',
-  }).pipe(share());
+  const standardized = pairs.map(pair => fromStandarPair(pair));
+
+  // Periodically restart the connection to fetch a fresh
+  // snapshot (e.g. to reset the depth).
+  const messages$ = Rx.timer(0, 60000).pipe(
+    switchMap(() =>
+      Rx.timer(250).pipe(
+        switchMap(() => {
+          return subscribe<BookMessage>(standardized, {
+            ...options,
+            name: 'book',
+          });
+        }),
+      ),
+    ),
+    share(),
+  );
 
   const snapshots$ = messages$.pipe(
     filter(isSnapshot),

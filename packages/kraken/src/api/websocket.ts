@@ -194,7 +194,6 @@ export const subscribe = <T = SubscriptionMessage>(
 
   const multiplex$ = connect().multiplex(subMsg, unsubMsg, filterFn);
   return multiplex$.pipe(
-    share(),
     tap(value => {
       if (value.status && value.status === 'error') {
         throw new Error(value.errorMessage);
@@ -205,5 +204,6 @@ export const subscribe = <T = SubscriptionMessage>(
       const pair = channels[value[0]];
       return [pair, value[1]] as [string, T];
     }),
+    share(),
   );
 };
