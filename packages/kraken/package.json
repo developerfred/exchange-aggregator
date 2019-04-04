@@ -62,6 +62,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "bignumber.js": "^8.1.1",
     "isomorphic-ws": "^4.0.1",
     "qs": "^6.6.0",
     "ramda": "^0.26.1",

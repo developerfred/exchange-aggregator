@@ -1,6 +1,6 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
-import { toWei } from 'web3-utils';
+import BigNumber from 'bignumber.js';
 import {
   subscribe,
   SubscriptionParams,
@@ -25,17 +25,18 @@ const isSnapshot = R.compose(
 const normalizeSnapshot = (
   pair: string,
   message: BookSnapshotMessage,
-): [string, string, [string, string][]] => {
-  const asks = (message.as || []).map(
-    ([price, volume]) =>
-      [toWei(price), toWei(`-${volume}`)] as [string, string],
-  );
+): [string, string, [BigNumber, BigNumber][]] => {
+  const asks = (message.as || []).map(([price, volume]) => [
+    new BigNumber(price),
+    new BigNumber(volume).negated(),
+  ]);
 
-  const bids = (message.bs || []).map(
-    ([price, volume]) => [toWei(price), toWei(volume)] as [string, string],
-  );
+  const bids = (message.bs || []).map(([price, volume]) => [
+    new BigNumber(price),
+    new BigNumber(volume),
+  ]);
 
-  const items = [...asks, ...bids] as [string, string][];
+  const items = [...asks, ...bids] as [BigNumber, BigNumber][];
   return ['snapshot', pair, items];
 };
 
@@ -47,17 +48,18 @@ const isUpdate = R.compose(
 const normalizeUpdate = (
   pair: string,
   message: BookUpdateMessage,
-): [string, string, [string, string][]] => {
-  const asks = (message.a || []).map(
-    ([price, volume]) =>
-      [toWei(price), toWei(`-${volume}`)] as [string, string],
-  );
+): [string, string, [BigNumber, BigNumber][]] => {
+  const asks = (message.a || []).map(([price, volume]) => [
+    new BigNumber(price),
+    new BigNumber(volume).negated(),
+  ]);
 
-  const bids = (message.b || []).map(
-    ([price, volume]) => [toWei(price), toWei(volume)] as [string, string],
-  );
+  const bids = (message.b || []).map(([price, volume]) => [
+    new BigNumber(price),
+    new BigNumber(volume),
+  ]);
 
-  const items = [...asks, ...bids] as [string, string][];
+  const items = [...asks, ...bids] as [BigNumber, BigNumber][];
   return ['update', pair, items];
 };
 
