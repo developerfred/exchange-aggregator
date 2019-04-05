@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-kraken",
-  "version": "0.0.4-alpha.0",
+  "version": "0.0.5-alpha.0",
   "description": "Integration for the Kraken API.",
   "main": "./lib/index.js",
   "module": "./lib/bundle.esm.js",
