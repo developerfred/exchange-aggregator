@@ -1,6 +1,6 @@
 import * as Rx from 'rxjs';
 import BigNumber from 'bignumber.js';
-import { map, tap, filter, share } from 'rxjs/operators';
+import { map, filter, share, concatMap } from 'rxjs/operators';
 import isomorphicWs from 'isomorphic-ws';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import * as debug from '../debug';
@@ -194,13 +194,15 @@ export const subscribe = <T = SubscriptionMessage>(
 
   const multiplex$ = connect().multiplex(subMsg, unsubMsg, filterFn);
   return multiplex$.pipe(
-    tap(value => {
+    concatMap(value => {
       if (value.status && value.status === 'error') {
-        throw new Error(value.errorMessage);
+        return Rx.throwError(new Error(value.errorMessage));
       }
+
+      return Rx.of(value);
     }),
     filter(value => Array.isArray(value)),
-    map(value => {
+    map((value: any) => {
       const pair = channels[value[0]];
       return [pair, value[1]] as [string, T];
     }),

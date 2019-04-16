@@ -16,6 +16,28 @@ export interface WatchOptions {
   interval?: SubscriptionParams['interval'];
 }
 
+export enum OrderbookMessageType {
+  SNAPSHOT = 'SNAPSHOT',
+  UPDATE = 'UPDATE',
+}
+
+export interface OrderbookOrder {
+  price: BigNumber;
+  volume: BigNumber;
+}
+
+export interface OrderbookSnapshot {
+  type: OrderbookMessageType.SNAPSHOT;
+  pair: string;
+  orders: OrderbookOrder[];
+}
+
+export interface OrderbookUpdate {
+  type: OrderbookMessageType.UPDATE;
+  pair: string;
+  orders: OrderbookOrder[];
+}
+
 const isSnapshot = R.compose(
   R.cond([[R.has('as'), R.T], [R.has('bs'), R.T], [R.T, R.F]]),
   R.nth(1),
@@ -26,19 +48,22 @@ const isSnapshot = R.compose(
 const normalizeSnapshot = (
   pair: string,
   message: BookSnapshotMessage,
-): [string, string, [BigNumber, BigNumber][]] => {
-  const asks = (message.as || []).map(([price, volume]) => [
-    new BigNumber(price),
-    new BigNumber(volume).negated(),
-  ]);
+): OrderbookSnapshot => {
+  const asks = (message.as || []).map(([price, volume]) => ({
+    price: new BigNumber(price),
+    volume: new BigNumber(volume).negated(),
+  }));
 
-  const bids = (message.bs || []).map(([price, volume]) => [
-    new BigNumber(price),
-    new BigNumber(volume),
-  ]);
+  const bids = (message.bs || []).map(([price, volume]) => ({
+    price: new BigNumber(price),
+    volume: new BigNumber(volume),
+  }));
 
-  const items = [...asks, ...bids] as [BigNumber, BigNumber][];
-  return ['snapshot', toStandardPair(pair), items];
+  return {
+    type: OrderbookMessageType.SNAPSHOT,
+    pair: toStandardPair(pair),
+    orders: [...asks, ...bids],
+  };
 };
 
 const isUpdate = R.compose(
@@ -49,19 +74,22 @@ const isUpdate = R.compose(
 const normalizeUpdate = (
   pair: string,
   message: BookUpdateMessage,
-): [string, string, [BigNumber, BigNumber][]] => {
-  const asks = (message.a || []).map(([price, volume]) => [
-    new BigNumber(price),
-    new BigNumber(volume).negated(),
-  ]);
+): OrderbookUpdate => {
+  const asks = (message.a || []).map(([price, volume]) => ({
+    price: new BigNumber(price),
+    volume: new BigNumber(volume).negated(),
+  }));
 
-  const bids = (message.b || []).map(([price, volume]) => [
-    new BigNumber(price),
-    new BigNumber(volume),
-  ]);
+  const bids = (message.b || []).map(([price, volume]) => ({
+    price: new BigNumber(price),
+    volume: new BigNumber(volume),
+  }));
 
-  const items = [...asks, ...bids] as [BigNumber, BigNumber][];
-  return ['update', toStandardPair(pair), items];
+  return {
+    type: OrderbookMessageType.UPDATE,
+    pair: toStandardPair(pair),
+    orders: [...asks, ...bids],
+  };
 };
 
 export const watch = (pairs: string[], options?: WatchOptions) => {
