@@ -4,7 +4,6 @@ import { Authentication, OrderType, SellOrBuy } from '../types';
 export interface AddOrderResponse {}
 
 export interface AddOrderParams {
-  nonce: string;
   pair: string;
   type: SellOrBuy;
   ordertype: OrderType;

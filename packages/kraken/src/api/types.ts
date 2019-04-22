@@ -6,7 +6,7 @@ export interface Authentication {
 export type OrderStatus =
   | 'pending'
   | 'open'
-  | 'close'
+  | 'closed'
   | 'cancelled'
   | 'expired';
 
