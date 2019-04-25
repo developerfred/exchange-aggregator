@@ -1,23 +1,23 @@
-import BN from 'bn.js';
-import { toWei } from 'web3-utils';
+import BigNumber from 'bignumber.js';
+import { toWei, fromWei } from 'web3-utils';
 import { Environment } from '../../types';
 
 export interface GetExpectedRateParams {
   srcToken: string;
   destToken: string;
-  srcQty: string;
+  srcQty: BigNumber | string | number;
 }
 
 export interface GetExpectedRateResponse {
-  expectedRate: BN;
-  slippageRate: BN;
+  expectedRate: BigNumber;
+  slippageRate: BigNumber;
 }
 
 export const getExpectedRate = async (
   env: Environment,
   params: GetExpectedRateParams,
 ): Promise<GetExpectedRateResponse> => {
-  const qty = toWei(params.srcQty);
+  const qty = toWei(params.srcQty.toString());
   const contract = env.contract('KyberNetworkProxy');
   const method = contract.methods.getExpectedRate(
     params.srcToken,
@@ -26,8 +26,11 @@ export const getExpectedRate = async (
   );
 
   const output = await method.call();
+  const expectedRate = fromWei(output.expectedRate.toString());
+  const slippageRate = fromWei(output.slippageRate.toString());
+
   return {
-    expectedRate: output.expectedRate,
-    slippageRate: output.slippageRate,
+    expectedRate: new BigNumber(expectedRate),
+    slippageRate: new BigNumber(slippageRate),
   };
 };

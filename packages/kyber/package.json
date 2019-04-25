@@ -67,7 +67,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
-    "bn.js": "^4.11.8",
+    "bignumber.js": "^8.1.1",
     "ramda": "^0.26.1",
     "rxjs": "^6.3.3",
     "web3-eth": "^1.0.0-beta.51",
