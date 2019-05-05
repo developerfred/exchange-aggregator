@@ -5,41 +5,42 @@ import WebSocket from 'isomorphic-ws';
 import { filter, share, takeWhile, repeat, tap, map } from 'rxjs/operators';
 import { log } from '../../../debug';
 
-interface InfoMessage {
+export interface InfoMessage {
   event: 'info';
   code?: number;
 }
 
-interface ServerStatusMessage extends InfoMessage {
+export interface ServerStatusMessage extends InfoMessage {
   version: number;
   platform: {
     status: 0 | 1;
   };
 }
 
-interface SubscribeMessage {
+export interface SubscribeMessage {
   event: 'subscribe';
   [key: string]: any;
 }
 
-interface SubscribedMessage {
+export interface SubscribedMessage {
   event: 'subscribed';
   chanId: number;
   [key: string]: any;
 }
 
-interface ErrorMessage {
+export interface ErrorMessage {
   event: 'error';
   code: number;
   msg: string;
 }
 
-type ChannelMessage<T> = [number, T];
+export type ChannelMessage<T> = [number, T];
 
 export type AnyMessage<T> =
   | InfoMessage
   | ServerStatusMessage
   | ErrorMessage
+  | SubscribeMessage
   | SubscribedMessage
   | ChannelMessage<T>;
 
@@ -67,7 +68,11 @@ const isServerStatusMessage = R.allPass([
   R.has('version'),
 ]) as <T>(message: AnyMessage<T>) => message is ServerStatusMessage;
 
-class BitfinexWebSocketError extends Error {
+const isChannelMessage = Array.isArray as <T>(
+  message: AnyMessage<T>,
+) => message is ChannelMessage<T>;
+
+export class BitfinexWebSocketError extends Error {
   public constructor(message: string, public code?: number) {
     super(message);
   }
@@ -113,7 +118,9 @@ export const socket = <T>(subscribe: () => SubscribeMessage) => {
   // Take messages until a maintenance window starts.
   const messages$ = responses$.pipe(
     takeWhile(value => !isMaintenanceEndMessage(value)),
-    takeWhile(value => !(isServerStatusMessage(value) && value.version === 2)),
+    takeWhile(
+      value => !(isServerStatusMessage(value) && value.platform.status === 0),
+    ),
   );
 
   // Keep the connection alive while we wait for a
@@ -121,8 +128,8 @@ export const socket = <T>(subscribe: () => SubscribeMessage) => {
   const wait$ = responses$.pipe(filter(() => false));
 
   return Rx.merge(messages$, wait$).pipe(
-    filter(value => Array.isArray(value)),
-    map(value => value[1] as T),
+    filter(isChannelMessage),
+    map(value => value[1]),
     repeat(),
     share(),
   );
