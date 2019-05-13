@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib",
-    "types": ["jest"]
+    "outDir": "lib"
   },
   "include": ["src/**/*"],
   "exclude": ["**/*.test.*"]
