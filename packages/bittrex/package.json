@@ -1,5 +1,5 @@
 {
-  "name": "@melonproject/ea-bittrtex",
+  "name": "@melonproject/ea-bittrex",
   "version": "0.0.1-alpha.0",
   "description": "Integration for the Bittrex API.",
   "main": "./lib/index.js",
