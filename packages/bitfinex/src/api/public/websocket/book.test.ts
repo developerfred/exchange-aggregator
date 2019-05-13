@@ -1,11 +1,12 @@
-import { book } from './book';
+import { pair } from './book';
 import { log } from '../../../debug';
 
 it('asd', async () => {
-  book({ symbol: 'tBTCUSD' }).subscribe(log);
-  book({ symbol: 'tBTCUSD' }).subscribe(log);
+  pair('MLN/ETH').subscribe(value => {
+    console.log(value);
+  });
 
   return new Promise(resolve => {
-    setTimeout(() => resolve(), 10000);
+    setTimeout(() => resolve(), 1000);
   });
 });

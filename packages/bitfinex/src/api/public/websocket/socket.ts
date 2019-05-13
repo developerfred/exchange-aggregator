@@ -68,7 +68,8 @@ const isServerStatusMessage = R.allPass([
   R.has('version'),
 ]) as <T>(message: AnyMessage<T>) => message is ServerStatusMessage;
 
-const isChannelMessage = Array.isArray as <T>(
+const isChannelMessage = (value =>
+  Array.isArray(value) && Array.isArray(value[1])) as <T>(
   message: AnyMessage<T>,
 ) => message is ChannelMessage<T>;
 

@@ -20,10 +20,10 @@ export const generateSignature = (
   return hmacDigest;
 };
 
-const prefix = 'https://api.kraken.com';
+const prefix = 'https://api.kraken.com/0';
 
 export const publicRequest = async (method: string, params: any = {}) => {
-  const path = `/0/public/${method}`;
+  const path = `/public/${method}`;
 
   try {
     return axios.get(`${prefix}${path}`, { params });
@@ -39,7 +39,7 @@ export const privateRequest = async (
   auth: Authentication,
   params: any = {},
 ) => {
-  const path = `/0/private/${method}`;
+  const path = `/private/${method}`;
   const nonce = Date.now() * 1000;
   const data = qs.stringify({
     nonce,

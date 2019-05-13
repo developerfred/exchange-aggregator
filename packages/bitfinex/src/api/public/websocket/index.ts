@@ -1,2 +1,2 @@
-export { book } from './book';
+export { book, pair, currency } from './book';
 export { socket } from './socket';
