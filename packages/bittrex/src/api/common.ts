@@ -63,7 +63,6 @@ export const privateRequest = async <T>(
 
     return response.data;
   } catch (e) {
-    console.log(e);
     const error = new Error('Failed to execute request on exchange.');
     (error as any).original = e;
     throw error;

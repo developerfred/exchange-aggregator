@@ -5,10 +5,17 @@ export interface GetOrderbookParams {
   type: 'sell' | 'buy' | 'both';
 }
 
-export type GetOrderbookResult = {
+export interface OrderbookEntry {
   Quantity: number;
   Rate: number;
-}[];
+}
+
+export interface FullOrderbook {
+  buy: OrderbookEntry[];
+  sell: OrderbookEntry[];
+}
+
+export type GetOrderbookResult = FullOrderbook | OrderbookEntry[];
 
 export const orderbook = async (params: GetOrderbookParams) => {
   const method = 'public/getorderbook';
