@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-bittrex",
-  "version": "0.0.2-alpha.2",
+  "version": "0.0.2-alpha.3",
   "description": "Integration for the Bittrex API.",
   "main": "./lib/index.js",
   "module": "./lib/bundle.esm.js",
