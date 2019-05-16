@@ -1,23 +1,21 @@
-import { privateRequest, Authentication } from '../common';
+import { privateRequest, Authentication, HttpMethod } from '../common';
 
 export interface Balance {
-  Currency: string;
-  Balance: number;
-  Available: number;
-  Pending: number;
-  CryptoAddress: string;
-  Requested: boolean;
-  Uuid: string;
+  currencySymbol: string;
+  total: number;
+  available: number;
 }
 
 export type GetBalancesResult = Balance[];
 
 export const balances = async (auth: Authentication) => {
-  const method = 'account/getbalances';
-  const response = await privateRequest<GetBalancesResult>(method, auth);
-  if (!response.success) {
-    throw new Error(response.message);
-  }
+  const path = 'balances';
+  const response = await privateRequest<GetBalancesResult>(
+    path,
+    auth,
+    undefined,
+    HttpMethod.GET,
+  );
 
-  return response.result;
+  return response;
 };

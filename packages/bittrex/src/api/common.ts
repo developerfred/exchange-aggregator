@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import qs from 'qs';
 import axios from 'axios';
 
 export interface Authentication {
@@ -7,31 +6,50 @@ export interface Authentication {
   secret: string;
 }
 
-export const generateSignature = (path: string, secret: string) => {
+export const generateSignature = (
+  path: string,
+  secret: string,
+  timestamp: number,
+  method: HttpMethod,
+  hash: string,
+) => {
+  const joined = [timestamp, path, method, hash].join('');
   return crypto
     .createHmac('sha512', secret)
-    .update(path)
+    .update(joined)
     .digest('hex');
 };
 
-const prefix = 'https://api.bittrex.com/api/v1.1';
+export const generateContentHash = (content: any = '') => {
+  return crypto
+    .createHash('sha512')
+    .update(JSON.stringify(content))
+    .digest('hex');
+};
 
-export interface BittrexResponse<T> {
-  success: boolean;
-  message: string;
-  result: T;
+const prefix = 'https://api.bittrex.com/v3';
+
+export enum HttpMethod {
+  GET = 'GET',
+  POST = 'POST',
+  PUT = 'PUT',
+  DELETE = 'DELETE',
+  PATCH = 'PATCH',
+  HEAD = 'HEAD',
+  TRACE = 'TRACE',
+  OPTIONS = 'OPTIONS',
+  CONNECT = 'CONNECT',
 }
 
 export const publicRequest = async <T>(
-  method: string,
+  path: string,
   params: any = {},
-): Promise<BittrexResponse<T>> => {
-  const path = `/${method}`;
-
+): Promise<T> => {
   try {
-    const response = await axios.get(`${prefix}${path}`, { params });
+    const response = await axios.get(`${prefix}/${path}`, { params });
     return response.data;
   } catch (e) {
+    console.log(e);
     const error = new Error('Failed to execute request on exchange.');
     (error as any).original = e;
     throw error;
@@ -39,30 +57,33 @@ export const publicRequest = async <T>(
 };
 
 export const privateRequest = async <T>(
-  method: string,
+  path: string,
   auth: Authentication,
   params: any = {},
-): Promise<BittrexResponse<T>> => {
-  const path = `${prefix}/${method}`;
-  const nonce = Date.now() * 1000;
-  const query = qs.stringify({
-    ...params,
-    nonce,
-    apiKey: auth.key,
-  });
-
-  const message = `${path}?${query}`;
-  const signature = generateSignature(message, auth.secret);
+  method: HttpMethod = HttpMethod.POST,
+): Promise<T> => {
+  const { secret, key } = auth;
+  const url = `${prefix}/${path}`;
+  const timestamp = new Date().getTime();
+  const hash = generateContentHash(params);
+  const signature = generateSignature(url, secret, timestamp, method, hash);
 
   try {
-    const response = await axios.get(message, {
+    const response = await axios.request({
+      url,
+      data: params,
+      method,
       headers: {
-        apisign: signature,
+        'Api-Key': key,
+        'Api-Timestamp': timestamp,
+        'Api-Content-Hash': hash,
+        'Api-Signature': signature,
       },
     });
 
     return response.data;
   } catch (e) {
+    console.log(e);
     const error = new Error('Failed to execute request on exchange.');
     (error as any).original = e;
     throw error;
