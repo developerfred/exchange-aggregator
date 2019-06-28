@@ -32,12 +32,12 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
   const deployment = environment.deployment;
   const proxy = R.path(proxyPath, deployment);
 
-  const bidQuantities = quantities.map(quantity => {
-    return createQuantity(options.pair.quote, quantity);
+  const qtys = quantities.map(quantity => {
+    return createQuantity(options.pair.base, quantity);
   });
 
   const bidsPromise = Promise.all(
-    bidQuantities.map(quantity => {
+    qtys.map(quantity => {
       return getExpectedRate(environment, proxy, {
         makerAsset: options.pair.quote,
         takerAsset: options.pair.base,
@@ -50,12 +50,8 @@ export const fetch = async (options: Kyber.FetchOptions): Promise<Order[]> => {
     }),
   );
 
-  const askQuantities = quantities.map(quantity => {
-    return createQuantity(options.pair.base, quantity);
-  });
-
   const asksPromise = Promise.all(
-    askQuantities.map(quantity => {
+    qtys.map(quantity => {
       return getExpectedRate(environment, proxy, {
         makerAsset: options.pair.base,
         takerAsset: options.pair.quote,

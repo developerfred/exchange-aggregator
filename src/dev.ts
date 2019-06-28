@@ -235,7 +235,7 @@ commander
     }
 
     const prefix = (options.network as string).toLowerCase();
-    const endpoint = `wss://${prefix}.melonport.com`;
+    const endpoint = `wss://${prefix}.infura.io/ws/v3/a0dcc5ab3b1a4bd49990810564edba93`;
     const environment = await withDeployment(
       constructEnvironment({
         track: Tracks.KYBER_PRICE,
