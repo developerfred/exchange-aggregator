@@ -10,9 +10,7 @@ export interface AssetPairsResponse {
   [key: string]: AssetPairInfo;
 }
 
-export const assetPairs = async (
-  params?: AssetPairsParams,
-): Promise<AssetPairsResponse> => {
+export const assetPairs = async (params?: AssetPairsParams): Promise<AssetPairsResponse> => {
   const args = {
     ...params,
     ...(params && params.pair && { pair: params.pair.join(',') }),

@@ -1,8 +1,4 @@
-import {
-  subscribe,
-  SubscriptionParams,
-  TradeMessage,
-} from '../../api/websocket';
+import { subscribe, SubscriptionParams, TradeMessage } from '../../api/websocket';
 import { share, map } from 'rxjs/operators';
 import { fromStandarPair, toStandardPair } from '../mapping';
 import BigNumber from 'bignumber.js';
@@ -31,10 +27,7 @@ export interface AbstractTrade {
   type: MarketOrLimit;
 }
 
-const normalizeMessage = (
-  pair: string,
-  message: TradeMessage,
-): AbstractTrade[] => {
+const normalizeMessage = (pair: string, message: TradeMessage): AbstractTrade[] => {
   const standardPair = toStandardPair(pair);
   const trades = message.map(value => {
     const [price, volume, timestamp, side, type] = value;

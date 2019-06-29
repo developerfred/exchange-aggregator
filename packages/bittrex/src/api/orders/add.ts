@@ -1,10 +1,5 @@
 import { privateRequest, Authentication } from '../common';
-import {
-  OrderDirection,
-  OrderType,
-  OrderTimeInForce,
-  OrderStatus,
-} from './types';
+import { OrderDirection, OrderType, OrderTimeInForce, OrderStatus } from './types';
 
 export interface AddOderParams {
   marketSymbol: string;

@@ -1,9 +1,4 @@
-import {
-  publicRequest,
-  privateRequest,
-  generateSignature,
-  generateContentHash,
-} from './common';
+import { publicRequest, privateRequest, generateSignature, generateContentHash } from './common';
 import { orderbook } from './markets/orderbook';
 import { balances } from './account/balances';
 import { add } from './orders/add';

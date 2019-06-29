@@ -7,14 +7,7 @@ export interface TradesParams {
 }
 
 export type TradesResponse = {
-  [key: string]: [
-    string,
-    string,
-    number,
-    SellOrBuyAbbreviated,
-    MarketOrLimitAbbreviated,
-    string
-  ][];
+  [key: string]: [string, string, number, SellOrBuyAbbreviated, MarketOrLimitAbbreviated, string][];
 } & {
   last: number;
 };

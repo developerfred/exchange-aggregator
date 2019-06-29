@@ -1,6 +1,5 @@
 import * as Rx from 'rxjs';
-import * as R from 'ramda';
-import { map, scan } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import BigNumber from 'bignumber.js';
 import { socket, SubscribeMessage } from './socket';
 
@@ -11,12 +10,9 @@ export interface SubscriptionOptions {
   length?: 25 | 100;
 }
 
-export type SubscriptionOptionsWithoutSymbol = Pick<
-  SubscriptionOptions,
-  Exclude<keyof SubscriptionOptions, 'symbol'>
->;
+export type SubscriptionOptionsWithoutSymbol = Pick<SubscriptionOptions, Exclude<keyof SubscriptionOptions, 'symbol'>>;
 
-export const book = <T>(options: SubscriptionOptions) => {
+const watchBook = <T>(options: SubscriptionOptions) => {
   const subProps = {
     channel: 'book',
     symbol: options.symbol,
@@ -41,11 +37,11 @@ export interface TradingPairBookEntry {
   amount: BigNumber;
 }
 
-export const pair = (
+export const watchAssetPair = (
   pair: string,
   options?: SubscriptionOptionsWithoutSymbol,
-) => {
-  const stream$ = book<TradingPairBookEntryRaw>({
+): Rx.Observable<TradingPairBookEntry | TradingPairBookEntry[]> => {
+  const stream$ = watchBook<TradingPairBookEntryRaw>({
     symbol: `t${pair.split('/').join('')}`,
     ...options,
   });
@@ -82,11 +78,11 @@ export interface CurrencyBookEntry {
   amount: BigNumber;
 }
 
-export const currency = (
+export const watchCurrency = (
   symbol: string,
   options?: SubscriptionOptionsWithoutSymbol,
-) => {
-  const stream$ = book<CurrencyBookEntryRaw>({
+): Rx.Observable<CurrencyBookEntry | CurrencyBookEntry[]> => {
+  const stream$ = watchBook<CurrencyBookEntryRaw>({
     symbol: `f${symbol}`,
     ...options,
   });
@@ -115,59 +111,4 @@ export const currency = (
       } as CurrencyBookEntry;
     }),
   );
-};
-
-type TrackableBookEntry = CurrencyBookEntry | TradingPairBookEntry;
-interface KeyedBookEntries<T extends TrackableBookEntry> {
-  [key: string]: T;
-}
-
-const keyedSnapshot = <T extends TrackableBookEntry>(values: T[]) => {
-  return values.reduce((carry, current) => {
-    const key = (
-      (current as CurrencyBookEntry).rate ||
-      (current as TradingPairBookEntry).price
-    ).toString();
-
-    return {
-      ...carry,
-      [key]: current,
-    };
-  }, {}) as KeyedBookEntries<T>;
-};
-
-export const track = <T extends TrackableBookEntry>(
-  initial: T[] = [],
-): Rx.OperatorFunction<T | T[], T[]> => {
-  const start = keyedSnapshot(initial);
-
-  return source =>
-    source.pipe(
-      scan<T | T[], KeyedBookEntries<T>>((carry, current) => {
-        if (Array.isArray(current)) {
-          const snapshot = current as T[];
-          return keyedSnapshot(snapshot);
-        }
-
-        const update = current as T;
-        const key = (
-          (update as CurrencyBookEntry).rate ||
-          (update as TradingPairBookEntry).price
-        ).toString();
-
-        if (current.count.isGreaterThan(0)) {
-          return {
-            ...carry,
-            [key]: current,
-          };
-        }
-
-        if (current.count.isZero()) {
-          return R.omit([key], carry);
-        }
-
-        return carry;
-      }, start),
-      map(value => Object.values(value)),
-    );
 };

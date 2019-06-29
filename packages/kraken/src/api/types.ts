@@ -3,12 +3,7 @@ export interface Authentication {
   secret: string;
 }
 
-export type OrderStatus =
-  | 'pending'
-  | 'open'
-  | 'closed'
-  | 'cancelled'
-  | 'expired';
+export type OrderStatus = 'pending' | 'open' | 'closed' | 'cancelled' | 'expired';
 
 export type SellOrBuy = 'sell' | 'buy';
 export type SellOrBuyAbbreviated = 's' | 'b';

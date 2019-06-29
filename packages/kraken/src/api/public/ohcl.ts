@@ -7,16 +7,7 @@ export interface OhclParams {
 }
 
 export type OhclResponse = {
-  [key: string]: [
-    number,
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    number
-  ][];
+  [key: string]: [number, string, string, string, string, string, string, number][];
 } & {
   last: number;
 };

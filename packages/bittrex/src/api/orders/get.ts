@@ -26,12 +26,7 @@ export interface GetOrderResponse {
 
 export const get = async (auth: Authentication, params: GetOrderParams) => {
   const method = `orders/${params.id}`;
-  const response = await privateRequest<GetOrderResponse>(
-    method,
-    auth,
-    undefined,
-    HttpMethod.GET,
-  );
+  const response = await privateRequest<GetOrderResponse>(method, auth, undefined, HttpMethod.GET);
 
   return response;
 };

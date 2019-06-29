@@ -9,10 +9,7 @@ export interface QueryLedgersParams {
   id: string[];
 }
 
-export const queryLedgers = async (
-  auth: Authentication,
-  params: QueryLedgersParams,
-): Promise<QueryLedgersResponse> => {
+export const queryLedgers = async (auth: Authentication, params: QueryLedgersParams): Promise<QueryLedgersResponse> => {
   const args = {
     ...params,
     ...(params.id && { id: params.id.join(',') }),

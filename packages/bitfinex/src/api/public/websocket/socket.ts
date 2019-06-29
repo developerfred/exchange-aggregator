@@ -44,32 +44,25 @@ export type AnyMessage<T> =
   | SubscribedMessage
   | ChannelMessage<T>;
 
-const isErrorMessage = R.propEq('event', 'error') as <T>(
+const isErrorMessage = R.propEq('event', 'error') as <T>(message: AnyMessage<T>) => message is ErrorMessage;
+
+const isServerRestartMessage = R.allPass([R.propEq('event', 'info'), R.propEq('code', 20051)]) as <T>(
   message: AnyMessage<T>,
-) => message is ErrorMessage;
+) => message is InfoMessage;
 
-const isServerRestartMessage = R.allPass([
-  R.propEq('event', 'info'),
-  R.propEq('code', 20051),
-]) as <T>(message: AnyMessage<T>) => message is InfoMessage;
+const isMaintenanceStartMessage = R.allPass([R.propEq('event', 'info'), R.propEq('code', 20061)]) as <T>(
+  message: AnyMessage<T>,
+) => message is InfoMessage;
 
-const isMaintenanceStartMessage = R.allPass([
-  R.propEq('event', 'info'),
-  R.propEq('code', 20061),
-]) as <T>(message: AnyMessage<T>) => message is InfoMessage;
+const isMaintenanceEndMessage = R.allPass([R.propEq('event', 'info'), R.propEq('code', 20060)]) as <T>(
+  message: AnyMessage<T>,
+) => message is InfoMessage;
 
-const isMaintenanceEndMessage = R.allPass([
-  R.propEq('event', 'info'),
-  R.propEq('code', 20060),
-]) as <T>(message: AnyMessage<T>) => message is InfoMessage;
+const isServerStatusMessage = R.allPass([R.propEq('event', 'info'), R.has('version')]) as <T>(
+  message: AnyMessage<T>,
+) => message is ServerStatusMessage;
 
-const isServerStatusMessage = R.allPass([
-  R.propEq('event', 'info'),
-  R.has('version'),
-]) as <T>(message: AnyMessage<T>) => message is ServerStatusMessage;
-
-const isChannelMessage = (value =>
-  Array.isArray(value) && Array.isArray(value[1])) as <T>(
+const isChannelMessage = (value => Array.isArray(value) && Array.isArray(value[1])) as <T>(
   message: AnyMessage<T>,
 ) => message is ChannelMessage<T>;
 
@@ -119,9 +112,7 @@ export const socket = <T>(subscribe: () => SubscribeMessage) => {
   // Take messages until a maintenance window starts.
   const messages$ = responses$.pipe(
     takeWhile(value => !isMaintenanceEndMessage(value)),
-    takeWhile(
-      value => !(isServerStatusMessage(value) && value.platform.status === 0),
-    ),
+    takeWhile(value => !(isServerStatusMessage(value) && value.platform.status === 0)),
   );
 
   // Keep the connection alive while we wait for a

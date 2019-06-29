@@ -8,12 +8,7 @@ export interface TradesHistoryResponse {
   count: number;
 }
 
-export type TradesHistoryType =
-  | 'all'
-  | 'any position'
-  | 'closed position'
-  | 'closing position'
-  | 'no position';
+export type TradesHistoryType = 'all' | 'any position' | 'closed position' | 'closing position' | 'no position';
 
 export interface TradesHistoryParams {
   type?: TradesHistoryType;

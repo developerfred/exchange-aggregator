@@ -10,6 +10,9 @@ function onwarn(message) {
 }
 
 export const globals = {
+  '@melonproject/ea-common': 'ea.common',
+  '@melonproject/ea-bitfinex': 'ea.bitfinex',
+  '@melonproject/ea-bittrex': 'ea.bittrex',
   '@melonproject/ea-kraken': 'ea.kraken',
   '@melonproject/ea-kyber': 'ea.kyber',
 };

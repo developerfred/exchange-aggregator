@@ -2,11 +2,7 @@ import { Eth } from 'web3-eth/types';
 import { Contract } from 'web3-eth-contract/types';
 import { Addresses, ContractName, Environment } from './types';
 
-export type CustomContractFactory = (
-  eth: Eth,
-  name: string,
-  address: string,
-) => Contract;
+export type CustomContractFactory = (eth: Eth, name: string, address: string) => Contract;
 
 export interface CreateEnvironmentOptions {
   eth: Eth;
@@ -19,9 +15,7 @@ const defaultFactory: CustomContractFactory = (eth, name, address) => {
   return new eth.Contract(abi, address);
 };
 
-export const createEnvironment = (
-  options: CreateEnvironmentOptions,
-): Environment => {
+export const createEnvironment = (options: CreateEnvironmentOptions): Environment => {
   const factory = (name: ContractName) => {
     const fn = options.factory || defaultFactory;
     const address = options.addresses[name];

@@ -24,17 +24,9 @@ export interface CancelOrderResponse {
   closedAt: string;
 }
 
-export const cancel = async (
-  auth: Authentication,
-  params: CancelOrderParams,
-) => {
+export const cancel = async (auth: Authentication, params: CancelOrderParams) => {
   const method = `orders/${params.id}`;
-  const response = await privateRequest<CancelOrderResponse>(
-    method,
-    auth,
-    undefined,
-    HttpMethod.DELETE,
-  );
+  const response = await privateRequest<CancelOrderResponse>(method, auth, undefined, HttpMethod.DELETE);
 
   return response;
 };

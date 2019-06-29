@@ -41,14 +41,9 @@ export interface OrderbookUpdate {
 const isSnapshot = R.compose(
   R.cond([[R.has('as'), R.T], [R.has('bs'), R.T], [R.T, R.F]]),
   R.nth(1),
-) as (
-  payload: [string, BookMessage],
-) => payload is [string, BookSnapshotMessage];
+) as (payload: [string, BookMessage]) => payload is [string, BookSnapshotMessage];
 
-const normalizeSnapshot = (
-  pair: string,
-  message: BookSnapshotMessage,
-): OrderbookSnapshot => {
+const normalizeSnapshot = (pair: string, message: BookSnapshotMessage): OrderbookSnapshot => {
   const asks = (message.as || []).map(([price, volume]) => ({
     price: new BigNumber(price),
     volume: new BigNumber(volume).negated(),
@@ -71,10 +66,7 @@ const isUpdate = R.compose(
   R.nth(1),
 ) as (payload: [string, BookMessage]) => payload is [string, BookUpdateMessage];
 
-const normalizeUpdate = (
-  pair: string,
-  message: BookUpdateMessage,
-): OrderbookUpdate => {
+const normalizeUpdate = (pair: string, message: BookUpdateMessage): OrderbookUpdate => {
   const asks = (message.a || []).map(([price, volume]) => ({
     price: new BigNumber(price),
     volume: new BigNumber(volume).negated(),

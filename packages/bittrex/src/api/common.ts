@@ -1,18 +1,12 @@
 import crypto from 'crypto';
-import axios from 'axios';
+import axios, { Method } from 'axios';
 
 export interface Authentication {
   key: string;
   secret: string;
 }
 
-export const generateSignature = (
-  path: string,
-  secret: string,
-  timestamp: number,
-  method: HttpMethod,
-  hash: string,
-) => {
+export const generateSignature = (path: string, secret: string, timestamp: number, method: Method, hash: string) => {
   const joined = [timestamp, path, method, hash].join('');
   return crypto
     .createHmac('sha512', secret)
@@ -41,10 +35,7 @@ export enum HttpMethod {
   CONNECT = 'CONNECT',
 }
 
-export const publicRequest = async <T>(
-  path: string,
-  params: any = {},
-): Promise<T> => {
+export const publicRequest = async <T>(path: string, params: any = {}): Promise<T> => {
   try {
     const response = await axios.get(`${prefix}/${path}`, { params });
     return response.data;
@@ -60,7 +51,7 @@ export const privateRequest = async <T>(
   path: string,
   auth: Authentication,
   params: any = {},
-  method: HttpMethod = HttpMethod.POST,
+  method: Method = 'POST',
 ): Promise<T> => {
   const { secret, key } = auth;
   const url = `${prefix}/${path}`;

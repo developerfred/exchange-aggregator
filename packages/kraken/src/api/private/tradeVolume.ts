@@ -26,10 +26,7 @@ export interface TradeVolumeParams {
   feeInfo?: boolean;
 }
 
-export const tradeVolume = async (
-  auth: Authentication,
-  params?: TradeVolumeParams,
-): Promise<TradeVolumeResponse> => {
+export const tradeVolume = async (auth: Authentication, params?: TradeVolumeParams): Promise<TradeVolumeResponse> => {
   const args = {
     ...(params &&
       typeof params.feeInfo !== undefined && {

@@ -64,26 +64,9 @@ export interface TickerMessage {
   o: [string, string];
 }
 
-export type OhlcMessage = [
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-  number
-];
+export type OhlcMessage = [string, string, string, string, string, string, string, string, number];
 
-export type TradeMessage = [
-  string,
-  string,
-  string,
-  SellOrBuyAbbreviated,
-  MarketOrLimitAbbreviated,
-  string
-][];
+export type TradeMessage = [string, string, string, SellOrBuyAbbreviated, MarketOrLimitAbbreviated, string][];
 
 export type SpreadMessage = [string, string, string];
 
@@ -101,12 +84,7 @@ export interface BookUpdateMessage {
 
 export type BookMessage = BookSnapshotMessage | BookUpdateMessage;
 
-export type SubscriptionMessage =
-  | OhlcMessage
-  | TradeMessage
-  | SpreadMessage
-  | BookSnapshotMessage
-  | BookUpdateMessage;
+export type SubscriptionMessage = OhlcMessage | TradeMessage | SpreadMessage | BookSnapshotMessage | BookUpdateMessage;
 
 export type RawSubscriptionMessage = [number, SubscriptionMessage];
 

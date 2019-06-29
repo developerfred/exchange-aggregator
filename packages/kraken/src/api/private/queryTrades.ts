@@ -13,10 +13,7 @@ export interface QueryTradesParams {
   trades?: boolean;
 }
 
-export const queryTrades = async (
-  auth: Authentication,
-  params: QueryTradesParams,
-): Promise<QueryTradesResponse> => {
+export const queryTrades = async (auth: Authentication, params: QueryTradesParams): Promise<QueryTradesResponse> => {
   const args = {
     ...params,
     ...(params.txid && { txid: params.txid.join(',') }),

@@ -12,10 +12,7 @@ export interface OpenOrdersParams {
   userref?: string;
 }
 
-export const openOrders = async (
-  auth: Authentication,
-  params?: OpenOrdersParams,
-): Promise<OpenOrdersResponse> => {
+export const openOrders = async (auth: Authentication, params?: OpenOrdersParams): Promise<OpenOrdersResponse> => {
   const response = (await privateRequest('OpenOrders', auth, params)).data;
   if (response.error && !!response.error.length) {
     throw new Error(response.error);

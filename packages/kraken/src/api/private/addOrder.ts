@@ -18,10 +18,7 @@ export interface AddOrderParams {
   validate?: boolean;
 }
 
-export const addOrder = async (
-  auth: Authentication,
-  params: AddOrderParams,
-): Promise<AddOrderResponse> => {
+export const addOrder = async (auth: Authentication, params: AddOrderParams): Promise<AddOrderResponse> => {
   const args = {
     ...params,
     ...(params.oflags && { oflags: params.oflags.join(',') }),

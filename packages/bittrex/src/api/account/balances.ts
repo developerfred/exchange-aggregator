@@ -10,12 +10,7 @@ export type GetBalancesResult = Balance[];
 
 export const balances = async (auth: Authentication) => {
   const path = 'balances';
-  const response = await privateRequest<GetBalancesResult>(
-    path,
-    auth,
-    undefined,
-    HttpMethod.GET,
-  );
+  const response = await privateRequest<GetBalancesResult>(path, auth, undefined, HttpMethod.GET);
 
   return response;
 };

@@ -11,10 +11,7 @@ export interface QueryOrdersParams {
   userref?: boolean;
 }
 
-export const queryOrders = async (
-  auth: Authentication,
-  params: QueryOrdersParams,
-): Promise<QueryOrdersResponse> => {
+export const queryOrders = async (auth: Authentication, params: QueryOrdersParams): Promise<QueryOrdersResponse> => {
   const args = {
     ...params,
     ...(params.txid && { txid: params.txid.join(',') }),

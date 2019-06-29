@@ -14,10 +14,7 @@ export interface LedgersParams {
   ofs?: number;
 }
 
-export const ledgers = async (
-  auth: Authentication,
-  params?: LedgersParams,
-): Promise<LedgersResponse> => {
+export const ledgers = async (auth: Authentication, params?: LedgersParams): Promise<LedgersResponse> => {
   const args = {
     ...params,
     ...(params && params.asset && { asset: params.asset.join(',') }),

@@ -19,11 +19,7 @@ export const getExpectedRate = async (
 ): Promise<GetExpectedRateResponse> => {
   const qty = toWei(params.srcQty.toString());
   const contract = env.contract('KyberNetworkProxy');
-  const method = contract.methods.getExpectedRate(
-    params.srcToken,
-    params.destToken,
-    qty,
-  );
+  const method = contract.methods.getExpectedRate(params.srcToken, params.destToken, qty);
 
   const output = await method.call();
   const expectedRate = fromWei(output.expectedRate.toString());
