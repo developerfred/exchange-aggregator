@@ -14,7 +14,7 @@ export type OrderbookEvent = OrderbookUpdateEvent | OrderbookSnapshotEvent;
 
 export interface OrderbookUpdateEvent {
   type: OrderbookEventType.UPDATE;
-  order: OrderbookEntry;
+  orders: OrderbookEntry[];
 }
 
 export interface OrderbookSnapshotEvent {
