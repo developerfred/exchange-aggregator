@@ -8,6 +8,9 @@
   "author": "Melonport AG <team@melonport.com>",
   "license": "GPL-3.0",
   "homepage": "https://github.com/melonproject/exchange-aggregator#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "contributors": [
     "Sebastian Siemssen <fubhy@fubhy.com>"
   ],
@@ -68,5 +71,6 @@
     "ramda": "^0.26.1",
     "rxjs": "^6.3.3",
     "rxjs-websockets": "^7.0.0"
-  }
+  },
+  "gitHead": "f0dc50488031df6473634a28bb0d95a022a69353"
 }
