@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-kraken",
-  "version": "0.0.6-alpha.0",
+  "version": "0.0.7-alpha.0",
   "description": "Integration for the Kraken API.",
   "main": "./lib/index.js",
   "module": "./lib/bundle.esm.js",
@@ -61,7 +61,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/ea-common": "^0.0.1-alpha.1",
+    "@melonproject/ea-common": "^0.0.2-alpha.0",
     "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
     "crypto": "^1.0.1",
