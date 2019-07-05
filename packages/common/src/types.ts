@@ -1,3 +1,4 @@
+import * as Rx from 'rxjs';
 import BigNumber from 'bignumber.js';
 
 export interface AssetPair {
@@ -5,21 +6,13 @@ export interface AssetPair {
   quote: string;
 }
 
-export enum OrderbookEventType {
-  SNAPSHOT = 'SNAPSHOT',
-  UPDATE = 'UPDATE',
-}
+export type OrderbookObserver<O = {}> = (pairs: AssetPair[], options?: O) => Rx.Observable<OrderbookUpdate>;
 
-export type OrderbookEvent = OrderbookUpdateEvent | OrderbookSnapshotEvent;
-
-export interface OrderbookUpdateEvent {
-  type: OrderbookEventType.UPDATE;
-  orders: OrderbookEntry[];
-}
-
-export interface OrderbookSnapshotEvent {
-  type: OrderbookEventType.SNAPSHOT;
-  orders: OrderbookEntry[];
+export interface OrderbookUpdate {
+  base: string;
+  quote: string;
+  updates: OrderbookEntry[];
+  snapshot?: boolean;
 }
 
 export interface OrderbookEntry {

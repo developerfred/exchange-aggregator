@@ -1,8 +1,10 @@
-import mapping from './mapping.json';
+import { AssetPair } from '@melonproject/ea-common';
 
-type AnyKv = { [key: string]: string };
+const mapping = {
+  BTC: 'XBT',
+} as { [key: string]: string };
 
-const swapKv = (object: AnyKv): AnyKv => {
+const swapKv = (object: typeof mapping) => {
   const keys = Object.keys(object);
   return Object.values(object).reduce(
     (carry, current, index) => ({
@@ -13,30 +15,26 @@ const swapKv = (object: AnyKv): AnyKv => {
   );
 };
 
-const inverted = swapKv(mapping);
+const inverted = swapKv(mapping) as { [key: string]: string };
 
 export const fromStandardSymbol = (symbol: string) => {
-  return (mapping as AnyKv)[symbol] || symbol;
+  return mapping[symbol] || symbol;
 };
 
 export const toStandardSymbol = (symbol: string) => {
   return inverted[symbol] || symbol;
 };
 
-export const fromStandarPair = (pair: string) => {
-  return pair
-    .split('/', 2)
-    .map(symbol => {
-      return fromStandardSymbol(symbol);
-    })
-    .join('/');
+export const fromStandarPair = (pair: AssetPair) => {
+  const base = fromStandardSymbol(pair.base);
+  const quote = fromStandardSymbol(pair.quote);
+  return `${base}/${quote}`;
 };
 
-export const toStandardPair = (pair: string) => {
-  return pair
-    .split('/', 2)
-    .map(symbol => {
-      return toStandardSymbol(symbol);
-    })
-    .join('/');
+export const toStandardPair = (pair: string): AssetPair => {
+  const [base, quote] = pair.split('/', 2).map(symbol => {
+    return toStandardSymbol(symbol);
+  });
+
+  return { base, quote };
 };

@@ -182,7 +182,9 @@ export const subscribe = <T = SubscriptionMessage>(
     filter(value => Array.isArray(value)),
     map((value: any) => {
       const pair = channels[value[0]];
-      return [pair, value[1]] as [string, T];
+      const result = value[1];
+
+      return [pair, result] as [string, T];
     }),
     share(),
   );
