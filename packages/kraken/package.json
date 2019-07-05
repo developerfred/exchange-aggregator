@@ -68,7 +68,6 @@
     "@melonproject/ea-common": "^0.0.2-alpha.0",
     "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
-    "crypto": "^1.0.1",
     "isomorphic-ws": "^4.0.1",
     "qs": "^6.6.0",
     "ramda": "^0.26.1",
