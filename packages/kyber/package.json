@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-kyber",
-  "version": "0.0.2-alpha.0",
+  "version": "0.0.2",
   "description": "Integration for the Kyber API.",
   "main": "./lib/index.js",
   "module": "./lib/bundle.esm.js",
@@ -70,7 +70,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/ea-common": "^0.0.2-alpha.0",
+    "@melonproject/ea-common": "^0.0.2",
     "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
     "ramda": "^0.26.1",
