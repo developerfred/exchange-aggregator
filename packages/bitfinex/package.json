@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-bitfinex",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Integration for the Bitfinex API.",
   "main": "./lib/index.js",
   "module": "./lib/bundle.esm.js",
@@ -68,7 +68,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/ea-common": "^0.0.2",
+    "@melonproject/ea-common": "^0.0.3",
     "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
     "isomorphic-ws": "^4.0.1",
