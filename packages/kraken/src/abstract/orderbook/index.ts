@@ -8,13 +8,17 @@ import {
   BookUpdateMessage,
   BookMessage,
 } from '../../api/websocket';
-import { OrderbookObserver, OrderbookUpdate } from '@melonproject/ea-common';
-import { filter, map, share, switchMap } from 'rxjs/operators';
-import { toStandardPair, fromStandarPair } from '../mapping';
+import { OrderbookObserver, OrderbookUpdate, AssetPair } from '@melonproject/ea-common';
+import { filter, map, share } from 'rxjs/operators';
+import { fromStandarPair } from '../mapping';
 
 export interface WatchOptions {
   depth?: SubscriptionParams['depth'];
   interval?: SubscriptionParams['interval'];
+}
+
+interface KeyedAssetPairs {
+  [key: string]: AssetPair;
 }
 
 const isSnapshot = R.compose(
@@ -22,79 +26,84 @@ const isSnapshot = R.compose(
   R.nth(1),
 ) as (payload: [string, BookMessage]) => payload is [string, BookSnapshotMessage];
 
-const normalizeSnapshot = (pair: string, message: BookSnapshotMessage) => {
-  const asks = (message.as || []).map(([price, volume]) => ({
-    price: new BigNumber(price),
-    volume: new BigNumber(volume).negated(),
-  }));
-
-  const bids = (message.bs || []).map(([price, volume]) => ({
-    price: new BigNumber(price),
-    volume: new BigNumber(volume),
-  }));
-
-  const { quote, base } = toStandardPair(pair);
-
-  return {
-    base,
-    quote,
-    updates: [...asks, ...bids],
-    snapshot: true,
-  } as OrderbookUpdate;
-};
-
 const isUpdate = R.compose(
   R.cond([[R.has('a'), R.T], [R.has('b'), R.T], [R.T, R.F]]),
   R.nth(1),
 ) as (payload: [string, BookMessage]) => payload is [string, BookUpdateMessage];
 
-const normalizeUpdate = (pair: string, message: BookUpdateMessage) => {
-  const asks = (message.a || []).map(([price, volume]) => ({
-    price: new BigNumber(price),
-    volume: new BigNumber(volume).negated(),
-  }));
-
-  const bids = (message.b || []).map(([price, volume]) => ({
-    price: new BigNumber(price),
-    volume: new BigNumber(volume),
-  }));
-
-  const { quote, base } = toStandardPair(pair);
-
-  return {
-    base,
-    quote,
-    updates: [...asks, ...bids],
-  } as OrderbookUpdate;
+const defaults = {
+  depth: 10,
 };
 
 export const observeOrderbook: OrderbookObserver<WatchOptions> = (pairs, options) => {
-  const standardized = pairs.map(pair => fromStandarPair(pair));
+  const pairsKeyed = pairs.reduce(
+    (carry, current) => ({
+      ...carry,
+      [fromStandarPair(current)]: current,
+    }),
+    {},
+  ) as KeyedAssetPairs;
 
-  // Periodically restart the connection to fetch a fresh
-  // snapshot (e.g. to reset the depth).
-  const messages$ = Rx.timer(0, 60000).pipe(
-    switchMap(() =>
-      Rx.timer(250).pipe(
-        switchMap(() => {
-          return subscribe<BookMessage>(standardized, {
-            ...options,
-            name: 'book',
-          });
-        }),
-      ),
-    ),
-    share(),
+  // We need to maintain the depth of the subscription because of the
+  // way Kraken provides so called "republish" records.
+  //
+  // @see https://support.kraken.com/hc/en-us/articles/360022326871-Public-WebSockets-API-common-questions
+  const opts = {
+    ...defaults,
+    ...options,
+  } as WatchOptions;
+
+  const messages$ = subscribe<BookMessage>(Object.keys(pairsKeyed), {
+    ...opts,
+    name: 'book',
+  }).pipe(share());
+
+  const updates$ = messages$.pipe(
+    filter(isUpdate),
+    map(([key, message]) => {
+      const pair = pairsKeyed[key];
+      const asks = (message.a || []).map(([price, volume]) => ({
+        price: new BigNumber(price),
+        volume: new BigNumber(volume),
+      }));
+
+      const bids = (message.b || []).map(([price, volume]) => ({
+        price: new BigNumber(price),
+        volume: new BigNumber(volume),
+      }));
+
+      return {
+        ...pair,
+        asks,
+        bids,
+        depth: opts.depth!,
+        snapshot: false,
+      } as OrderbookUpdate;
+    }),
   );
 
   const snapshots$ = messages$.pipe(
     filter(isSnapshot),
-    map(message => normalizeSnapshot(message[0], message[1])),
-  );
+    map(([key, message]) => {
+      const pair = pairsKeyed[key];
+      const asks = (message.as || []).map(([price, volume]) => ({
+        price: new BigNumber(price),
+        volume: new BigNumber(volume),
+      }));
 
-  const updates$ = messages$.pipe(
-    filter(isUpdate),
-    map(message => normalizeUpdate(message[0], message[1])),
+      const bids = (message.bs || []).map(([price, volume]) => ({
+        price: new BigNumber(price),
+        volume: new BigNumber(volume),
+      }));
+
+      return {
+        ...pair,
+        asks,
+        bids,
+        depth: opts.depth!,
+        snapshot: true,
+      } as OrderbookUpdate;
+    }),
   );
 
   return Rx.merge(snapshots$, updates$);

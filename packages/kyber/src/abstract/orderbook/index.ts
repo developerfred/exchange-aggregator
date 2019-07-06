@@ -63,52 +63,104 @@ export const observeOrderbook: OrderbookObserver<WatchOptions> = (pairs, options
     ...pairs.map(pair => {
       return Rx.defer(() => fetchOrders(pair, opts)).pipe(
         expand(() => Rx.timer(opts.interval).pipe(concatMap(() => fetchOrders(pair, opts)))),
-        map(entries => entries.filter(item => item.price.isFinite())),
-        track(pair.base, pair.quote),
+        track(opts.quantities!.length, pair.base, pair.quote),
       );
     }),
   );
 };
 
-const track = (base: string, quote: string) => (source: Rx.Observable<OrderbookEntry[]>) => {
-  return new Rx.Observable<OrderbookUpdate>(observer => {
-    let previous: OrderbookEntry[];
+const filterUpdate = (update: OrderbookEntry, state: OrderbookEntry[]): boolean => {
+  const match = state.find(item => item.volume.isEqualTo(update.volume.abs()));
+
+  if (typeof match === 'undefined') {
+    // If this price level doesn't exist in the state and is non-zero and finite, it's
+    // a newly emerged price/volume level.
+    return !update.price.isZero() && update.price.isFinite();
+  }
+
+  return !match.price.isEqualTo(update.price);
+};
+
+const track = (
+  depth: number,
+  base: string,
+  quote: string,
+): Rx.OperatorFunction<OrderbookEntry[], OrderbookUpdate> => source => {
+  return new Rx.Observable(observer => {
+    let state: {
+      asks: OrderbookEntry[];
+      bids: OrderbookEntry[];
+    } = undefined;
 
     return source.subscribe({
       next: updates => {
-        if (typeof previous === 'undefined') {
+        if (typeof state === 'undefined') {
+          state = {
+            bids: updates
+              .filter(item => item.volume.isPositive() && !item.price.isZero() && item.price.isFinite())
+              .sort((a, b) => b.price.comparedTo(a.price)),
+            asks: updates
+              .filter(item => item.volume.isNegative() && !item.price.isZero() && item.price.isFinite())
+              .map(item => ({
+                ...item,
+                volume: item.volume.abs(),
+              }))
+              .sort((a, b) => a.price.comparedTo(b.price)),
+          };
+
           observer.next({
+            ...state,
             base,
             quote,
             updates,
+            depth,
             snapshot: true,
           } as OrderbookUpdate);
         } else {
-          const changed = updates.filter(update => {
-            return !previous.find(prev => {
-              return prev.price.isEqualTo(update.price) && prev.volume.isEqualTo(update.volume);
-            });
-          });
+          const changes = updates
+            .filter(item => {
+              if (item.volume.isPositive()) {
+                return filterUpdate(item, state.bids);
+              }
 
-          const removed = previous
-            .filter(prev => {
-              return !previous.find(order => order.price.isEqualTo(prev.price));
+              if (item.volume.isNegative()) {
+                return filterUpdate(item, state.asks);
+              }
+
+              return false;
             })
             .map(item => ({
-              ...item,
-              volume: new BigNumber(0),
+              price: item.price.isFinite() ? item.price : new BigNumber(0),
+              volume: item.volume,
             }));
 
-          if (!!changed.length || !!removed.length) {
+          const bids = changes.filter(item => item.volume.isPositive());
+          const asks = changes
+            .filter(item => item.volume.isNegative())
+            .map(item => ({
+              ...item,
+              volume: item.volume.abs(),
+            }));
+
+          if (asks.length || bids.length) {
+            state.asks = asks.length
+              ? state.asks.filter(item => !asks.find(ask => ask.volume.isEqualTo(item.volume))).concat(asks)
+              : state.asks;
+
+            state.bids = bids.length
+              ? state.bids.filter(item => !bids.find(bid => bid.volume.isEqualTo(item.volume))).concat(bids)
+              : state.bids;
+
             observer.next({
               base,
               quote,
-              updates: [...changed, ...removed],
+              asks,
+              bids,
+              depth,
+              snapshot: false,
             } as OrderbookUpdate);
           }
         }
-
-        previous = updates;
       },
       error: error => observer.error(error),
       complete: () => observer.complete(),

@@ -1,5 +1,4 @@
 import * as Rx from 'rxjs';
-import BigNumber from 'bignumber.js';
 import { map, filter, share, concatMap } from 'rxjs/operators';
 import isomorphicWs from 'isomorphic-ws';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
@@ -70,7 +69,7 @@ export type TradeMessage = [string, string, string, SellOrBuyAbbreviated, Market
 
 export type SpreadMessage = [string, string, string];
 
-export type BookItem = [string, BigNumber, BigNumber];
+export type BookItem = [string, string, string];
 
 export interface BookSnapshotMessage {
   as?: BookItem[];

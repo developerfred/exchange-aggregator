@@ -3,35 +3,73 @@ import { OrderbookObserver, OrderbookUpdate } from '@melonproject/ea-common';
 import { watchAssetPair, SubscriptionOptionsWithoutSymbol } from '../../api/public/websocket/book';
 import { map } from 'rxjs/operators';
 
-export const observeOrderbook: OrderbookObserver<SubscriptionOptionsWithoutSymbol> = (pairs, options) => {
-  return Rx.merge(
-    ...pairs.map(pair =>
-      watchAssetPair(`${pair.base}/${pair.quote}`, options).pipe(
-        map(event => {
-          if (Array.isArray(event)) {
-            return {
-              snapshot: true,
-              base: pair.base,
-              quote: pair.quote,
-              updates: event.map(item => ({
-                price: item.price,
-                volume: item.amount,
-              })),
-            } as OrderbookUpdate;
-          }
+const defaults = {
+  length: 25,
+};
 
-          const update = {
-            price: event.price,
-            volume: event.count.isZero() ? event.count : event.amount,
-          };
+export const observeOrderbook: OrderbookObserver<SubscriptionOptionsWithoutSymbol> = (pairs, options) => {
+  const opts = {
+    ...defaults,
+    ...options,
+  } as SubscriptionOptionsWithoutSymbol;
+
+  const observers = pairs.map(pair => {
+    return watchAssetPair(`${pair.base}/${pair.quote}`, opts).pipe(
+      map(event => {
+        if (Array.isArray(event)) {
+          const bids = event
+            .filter(item => item.amount.isPositive())
+            .map(item => ({
+              price: item.price,
+              volume: item.amount,
+            }));
+
+          const asks = event
+            .filter(item => item.amount.isNegative())
+            .map(item => ({
+              price: item.price,
+              volume: item.amount.abs(),
+            }));
 
           return {
+            asks,
+            bids,
             base: pair.base,
             quote: pair.quote,
-            updates: [update],
+            depth: opts.length,
+            snapshot: true,
           } as OrderbookUpdate;
-        }),
-      ),
-    ),
-  );
+        }
+
+        const volume = event.count.isZero() ? event.count : event.amount.abs();
+        const bids = event.amount.isPositive()
+          ? [
+              {
+                price: event.price,
+                volume,
+              },
+            ]
+          : [];
+
+        const asks = event.amount.isNegative()
+          ? [
+              {
+                price: event.price,
+                volume,
+              },
+            ]
+          : [];
+
+        return {
+          asks,
+          bids,
+          depth: opts.length,
+          base: pair.base,
+          quote: pair.quote,
+        } as OrderbookUpdate;
+      }),
+    );
+  });
+
+  return Rx.merge(...observers);
 };

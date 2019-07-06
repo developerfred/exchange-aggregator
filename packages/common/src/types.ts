@@ -11,8 +11,10 @@ export type OrderbookObserver<O = {}> = (pairs: AssetPair[], options?: O) => Rx.
 export interface OrderbookUpdate {
   base: string;
   quote: string;
-  updates: OrderbookEntry[];
-  snapshot?: boolean;
+  depth: number;
+  snapshot: boolean;
+  asks: OrderbookEntry[];
+  bids: OrderbookEntry[];
 }
 
 export interface OrderbookEntry {

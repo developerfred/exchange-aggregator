@@ -16,11 +16,8 @@ export interface GetOrderbookResult {
 }
 
 export const orderbook = async (params: GetOrderbookParams) => {
-  const query = {
-    ...(params.depth && { depth: params.depth }),
-  };
-
+  const depth = params.depth || 25;
   const method = `markets/${params.market}/orderbook`;
-  const response = await publicRequest<GetOrderbookResult>(method, query);
+  const response = await publicRequest<GetOrderbookResult>(method, { depth });
   return response;
 };
