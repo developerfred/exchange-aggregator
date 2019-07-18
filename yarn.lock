@@ -550,10 +550,10 @@
   dependencies:
     events "^3.0.0"
 
-"@melonproject/protocol@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@melonproject/protocol/-/protocol-1.0.3.tgz#416adb6802122c7886321ff659cf711331423cff"
-  integrity sha512-KNMbqJsqV1LHIIoXCvyYA6qkxDBCdiV/Ge//J5WTjv7npDYXPYlm3HNcrDIkanEdUG6yv2h+2ioRMGuSYxYX8g==
+"@melonproject/protocol@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@melonproject/protocol/-/protocol-1.0.9.tgz#611838e58f074fc7ee83285eb7dcbe4502be0892"
+  integrity sha512-9pbJ+qNdFGDoqgFNGdI9oh3A5zQRVyoS99vguJr7ygsoSsIoqgZ6rfYDxFD4j6FMTBr3y/E1gC3NaTSInFlobw==
   dependencies:
     "@0x/contract-wrappers" "^4.1.1"
     "@0x/order-utils" "^3.0.4"
