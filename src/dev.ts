@@ -234,9 +234,8 @@ commander
       process.exit(1);
     }
 
-    const prefix = (options.network as string).toLowerCase();
     // tslint:disable-next-line:max-line-length
-    const endpoint = `wss://${prefix}.infura.io/ws/v3/a0dcc5ab3b1a4bd49990810564edba93`;
+    const endpoint = `ws://localhost:8080`;
     const environment = await withDeployment(
       constructEnvironment({
         track: Tracks.KYBER_PRICE,
