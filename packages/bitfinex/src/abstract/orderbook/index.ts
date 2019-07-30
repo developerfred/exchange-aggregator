@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs';
-import { OrderbookObserver, OrderbookUpdate } from '@melonproject/ea-common';
+import { OrderbookObserver } from '@melonproject/ea-common';
 import { watchAssetPair, SubscriptionOptionsWithoutSymbol } from '../../api/public/websocket/book';
 import { map } from 'rxjs/operators';
 
@@ -38,7 +38,7 @@ export const observeOrderbook: OrderbookObserver<SubscriptionOptionsWithoutSymbo
             quote: pair.quote,
             depth: opts.length,
             snapshot: true,
-          } as OrderbookUpdate;
+          };
         }
 
         const volume = event.count.isZero() ? event.count : event.amount.abs();
@@ -66,7 +66,8 @@ export const observeOrderbook: OrderbookObserver<SubscriptionOptionsWithoutSymbo
           depth: opts.length,
           base: pair.base,
           quote: pair.quote,
-        } as OrderbookUpdate;
+          snapshot: false,
+        };
       }),
     );
   });

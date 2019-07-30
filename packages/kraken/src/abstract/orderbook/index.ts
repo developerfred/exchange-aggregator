@@ -8,7 +8,7 @@ import {
   BookUpdateMessage,
   BookMessage,
 } from '../../api/websocket';
-import { OrderbookObserver, OrderbookUpdate, AssetPair } from '@melonproject/ea-common';
+import { OrderbookObserver, AssetPair } from '@melonproject/ea-common';
 import { filter, map, share } from 'rxjs/operators';
 import { fromStandarPair } from '../mapping';
 
@@ -78,7 +78,7 @@ export const observeOrderbook: OrderbookObserver<WatchOptions> = (pairs, options
         bids,
         depth: opts.depth!,
         snapshot: false,
-      } as OrderbookUpdate;
+      };
     }),
   );
 
@@ -102,7 +102,7 @@ export const observeOrderbook: OrderbookObserver<WatchOptions> = (pairs, options
         bids,
         depth: opts.depth!,
         snapshot: true,
-      } as OrderbookUpdate;
+      };
     }),
   );
 

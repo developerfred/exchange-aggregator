@@ -112,10 +112,11 @@ const track = (
             ...state,
             base,
             quote,
-            updates,
+            asks: state.asks,
+            bids: state.bids,
             depth,
             snapshot: true,
-          } as OrderbookUpdate);
+          });
         } else {
           const changes = updates
             .filter(item => {
@@ -158,7 +159,7 @@ const track = (
               bids,
               depth,
               snapshot: false,
-            } as OrderbookUpdate);
+            });
           }
         }
       },
