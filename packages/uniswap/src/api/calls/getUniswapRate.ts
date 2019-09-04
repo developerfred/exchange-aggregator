@@ -27,7 +27,7 @@ export const getUniswapRate = async (
     qty,
   );
 
-  const output = new BigNumber((await method.call()).toString);
+  const output = new BigNumber((await method.call()).toString());
   const rate = output.multipliedBy(new BigNumber(10).pow(params.takerDecimals)).dividedBy(qty);
   return new BigNumber(fromWei(rate.toString()));
 };
