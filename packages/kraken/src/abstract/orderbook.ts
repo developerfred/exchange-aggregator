@@ -1,16 +1,11 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
 import BigNumber from 'bignumber.js';
-import {
-  subscribe,
-  SubscriptionParams,
-  BookSnapshotMessage,
-  BookUpdateMessage,
-  BookMessage,
-} from '../../api/websocket';
+import { subscribe } from '../api/websocket';
 import { OrderbookObserver, AssetPair } from '@melonproject/ea-common';
 import { filter, map, share } from 'rxjs/operators';
-import { fromStandarPair } from '../mapping';
+import { fromStandarPair } from './mapping';
+import { BookUpdateMessage, BookMessage, SubscriptionParams, BookSnapshotMessage } from '../api/types';
 
 export interface WatchOptions {
   depth?: SubscriptionParams['depth'];
