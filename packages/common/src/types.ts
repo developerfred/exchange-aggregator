@@ -1,16 +1,22 @@
 import * as Rx from 'rxjs';
 import BigNumber from 'bignumber.js';
 
+export interface Token {
+  address: string;
+  decimals: number;
+  symbol: string;
+}
+
 export interface AssetPair {
-  base: string;
-  quote: string;
+  base: Token;
+  quote: Token;
 }
 
 export type OrderbookObserver<O = {}> = (pairs: AssetPair[], options?: O) => Rx.Observable<OrderbookUpdate>;
 
 export interface OrderbookUpdate {
-  base: string;
-  quote: string;
+  base: Token;
+  quote: Token;
   depth: number;
   snapshot: boolean;
   asks: OrderbookEntry[];

@@ -38,6 +38,7 @@
     "compile": "node scripts/compile",
     "clean": "rimraf lib && rimraf coverage",
     "watch": "tsc -w -p . & rollup -c -w",
+    "typecheck": "tsc -p . --noEmit",
     "format": "prettier --write src/{*,**/*}.ts",
     "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
     "lint:tslint": "tsc --noEmit && tslint -c ../../tslint.json src/{*,**/*}.ts",
@@ -60,7 +61,7 @@
     "rollup": "^1.16.3",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-sourcemaps": "^0.4.2",
-    "solc": "^0.5.7",
+    "solc": "^0.5.11",
     "ts-jest": "^24.0.2",
     "ts-node-dev": "^1.0.0-pre.32",
     "tslint": "^5.11.0",
@@ -74,8 +75,9 @@
     "bignumber.js": "^9.0.0",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
-    "web3-eth": "^1.0.0-beta.51",
-    "web3-utils": "^1.0.0-beta.51"
+    "web3-eth": "^2.0.0-alpha.1",
+    "web3-eth-contract": "^2.0.0-alpha.1",
+    "web3-utils": "^2.0.0-alpha.1"
   },
   "gitHead": "f0dc50488031df6473634a28bb0d95a022a69353"
 }

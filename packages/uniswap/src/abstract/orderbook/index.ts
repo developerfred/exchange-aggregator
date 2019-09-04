@@ -1,6 +1,6 @@
 import * as Rx from 'rxjs';
 import { OrderbookUpdate, OrderbookObserver, OrderbookEntry, AssetPair, Token } from '@melonproject/ea-common';
-import { getExpectedRate } from '../../api/calls/getExpectedRate';
+import { getUniswapRate } from '../../api/calls/getUniswapRate';
 import { map, expand, concatMap } from 'rxjs/operators';
 import { Environment } from '../../types';
 import BigNumber from 'bignumber.js';
@@ -19,16 +19,18 @@ const defaults = {
 const fetchOrders = (pair: AssetPair, options: WatchOptions): Rx.Observable<OrderbookEntry[]> => {
   const asks = options.quantities!.map(qty => {
     return Rx.defer(() =>
-      getExpectedRate(options.environment, {
-        srcToken: pair.base.address,
-        destToken: pair.quote.address,
-        srcQty: qty.toString(),
+      getUniswapRate(options.environment, {
+        takerAsset: pair.base.address,
+        makerAsset: pair.quote.address,
+        takerQuantity: qty.toString(),
+        takerDecimals: pair.base.decimals,
+        targetExchange: options.environment.addresses.UniswapFactory,
       }),
     ).pipe(
       map(
         result =>
           ({
-            price: result.expectedRate,
+            price: result,
             volume: qty,
           } as OrderbookEntry),
       ),
@@ -37,16 +39,18 @@ const fetchOrders = (pair: AssetPair, options: WatchOptions): Rx.Observable<Orde
 
   const bids = options.quantities!.map(qty => {
     return Rx.defer(() =>
-      getExpectedRate(options.environment, {
-        srcToken: pair.quote.address,
-        destToken: pair.base.address,
-        srcQty: qty.toString(),
+      getUniswapRate(options.environment, {
+        takerAsset: pair.quote.address,
+        makerAsset: pair.base.address,
+        takerQuantity: qty.toString(),
+        takerDecimals: pair.quote.decimals,
+        targetExchange: options.environment.addresses.UniswapFactory,
       }),
     ).pipe(
       map(
         result =>
           ({
-            price: new BigNumber(1).dividedBy(result.expectedRate),
+            price: new BigNumber(1).dividedBy(result),
             volume: qty.negated(),
           } as OrderbookEntry),
       ),

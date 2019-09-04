@@ -4,7 +4,9 @@ import { Contract } from 'web3-eth-contract';
 export type Network = 'mainnet' | 'kovan';
 
 export interface Addresses {
-  KyberNetworkProxy?: string;
+  UniswapAdapter?: string;
+  UniswapFactory?: string;
+  Weth?: string;
 }
 
 export type ContractFactory = (name: string) => Contract;

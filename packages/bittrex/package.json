@@ -35,6 +35,7 @@
     "dev": "ts-node-dev --transpileOnly ./src/dev",
     "clean": "rimraf lib && rimraf coverage",
     "watch": "tsc -w -p . & rollup -c -w",
+    "typecheck": "tsc -p . --noEmit",
     "format": "prettier --write src/{*,**/*}.ts",
     "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
     "lint:tslint": "tsc --noEmit && tslint -c ../../tslint.json src/{*,**/*}.ts",

@@ -1,18 +1,19 @@
 const path = require('path');
 const fs = require('fs');
 const solc = require('solc');
+const glob = require('glob');
 
-const package = path.dirname(require.resolve('kyber-network-smart-contracts/package.json'));
-const source = path.join(package, 'contracts');
+const package = path.dirname(require.resolve('melon-smart-contracts/package.json'));
+const source = path.join(package, 'src', 'contracts');
 const destination = path.resolve(__dirname, '..', 'src', 'abi');
 
 if (!fs.existsSync(destination)) {
   fs.mkdirSync(destination);
 }
 
-const version = 'v0.4.18+commit.9cf6e910';
+const version = 'v0.4.25+commit.59dbf8f1';
 const contracts = [
-  'KyberNetworkProxy.sol',
+  'exchanges/UniswapAdapter.sol',
 ];
 
 (async () => {
@@ -44,8 +45,15 @@ const contracts = [
     },
   });
 
+  const candidates = glob.sync('**/*.sol', {
+    cwd: source,
+  }).reduce((carry, current) => ({
+    ...carry,
+    [path.basename(current).toLowerCase()]: current,
+  }), {});
+
   const compiled = await compiler.compile(input, (file) => ({
-    contents: fs.readFileSync(path.join(source, file), 'utf8'),
+    contents: fs.readFileSync(path.join(source, candidates[file.toLowerCase()]), 'utf8'),
   }));
 
   const output = JSON.parse(compiled);
@@ -68,3 +76,4 @@ const contracts = [
     console.log(`Wrote ${file}.`);
   });
 })();
+

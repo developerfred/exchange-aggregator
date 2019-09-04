@@ -14,7 +14,7 @@ export const observeOrderbook: OrderbookObserver<SubscriptionOptionsWithoutSymbo
   } as SubscriptionOptionsWithoutSymbol;
 
   const observers = pairs.map(pair => {
-    return watchAssetPair(`${pair.base}/${pair.quote}`, opts).pipe(
+    return watchAssetPair(`${pair.base.symbol}/${pair.quote.symbol}`, opts).pipe(
       map(event => {
         if (Array.isArray(event)) {
           const bids = event
