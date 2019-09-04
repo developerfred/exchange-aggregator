@@ -1,88 +1,30 @@
 {
-  "name": "@melonproject/exchange-aggregator",
-  "version": "2.0.0-alpha2",
-  "description": "Aggregates orderbooks across various exchanges.",
-  "main": "lib/index.umd.js",
-  "module": "lib/index.js",
-  "typings": "lib/index.d.ts",
-  "author": "Melonport AG <team@melonport.com>",
-  "license": "GPL-3.0",
-  "homepage": "https://github.com/melonproject/exchange-aggregator#readme",
-  "contributors": [
-    "Sebastian Siemssen <fubhy@fubhy.com>"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/melonproject/exchange-aggregator.git"
-  },
-  "bugs": {
-    "url": "https://github.com/melonproject/exchange-aggregator/issues"
-  },
-  "keywords": [
-    "Ethereum",
-    "Protocol",
-    "Melon",
-    "Solidity",
-    "Smart Contracts"
-  ],
-  "files": [
-    "lib/"
+  "private": true,
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "prepublish": "yarn lint && yarn test && yarn build",
-    "prebuild": "rimraf lib",
-    "build": "tsc -p tsconfig.build.json",
-    "postbuild": "yarn bundle",
-    "bundle": "rollup -c",
-    "clean": "rimraf lib && rimraf coverage",
-    "dev": "ts-node-dev --transpileOnly src/dev",
-    "format": "prettier --write src/{*,**/*}.ts",
-    "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
-    "lint:tslint": "tsc --noEmit && tslint src/{*,**/*}.ts",
-    "lint": "yarn lint:tslint && yarn lint:prettier",
-    "snyk": "synk test",
-    "test": "yarn jest",
-    "test:coverage": "yarn test --coverage",
-    "test:watch": "yarn test --watch"
+    "postinstall": "lerna exec -- yarn && lerna run prepare",
+    "clean": "lerna run clean",
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "lint": "lerna run lint",
+    "format": "lerna run format",
+    "type-check": "lerna run typecheck",
+    "predeploy": "yarn && yarn clean && yarn build && yarn lint && yarn test",
+    "deploy": "lerna publish -m \"chore: Publish\"",
+    "deploy:next": "yarn deploy --canary --preid next",
+    "watch": "trap \"kill 0\" SIGINT; for f in `ls packages`; do (cd `pwd`/packages/$f && yarn run watch) & done; "
   },
   "devDependencies": {
-    "@types/crypto-js": "^3.1.43",
-    "@types/jest": "^23.3.9",
-    "@types/node": "^10.12.10",
-    "@types/ramda": "^0.25.44",
-    "cli-table": "^0.3.1",
-    "commander": "^2.19.0",
-    "debug": "^4.0.1",
-    "husky": "^1.1.2",
-    "jest": "^23.6.0",
-    "lint-staged": "^7.3.0",
-    "prettier": "^1.14.3",
-    "rimraf": "^2.6.2",
-    "rollup": "^0.67.0",
-    "rollup-plugin-sourcemaps": "^0.4.2",
-    "snyk": "^1.110.2",
-    "ts-jest": "^23.10.5",
-    "ts-node-dev": "^1.0.0-pre.32",
-    "tslint": "^5.11.0",
-    "tslint-config-airbnb": "^5.11.0",
-    "tslint-config-prettier": "^1.15.0",
-    "typescript": "^3.1.1"
-  },
-  "dependencies": {
-    "@melonproject/protocol": "^1.0.3",
-    "@melonproject/token-math": "^0.1.6",
-    "@radarrelay/types": "^1.2.1",
-    "axios": "^0.18.0",
-    "crypto-js": "^3.1.9-1",
-    "isomorphic-ws": "^4.0.1",
-    "qs": "^6.6.0",
-    "ramda": "^0.26.1",
-    "rxjs": "^6.3.3"
+    "husky": "^2.7.0",
+    "lerna": "^3.15.0",
+    "lint-staged": "^8.1.5"
   },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
-      "pre-push": "yarn lint"
+      "pre-push": "yarn lint && yarn test"
     }
   },
   "lint-staged": {

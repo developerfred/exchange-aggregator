@@ -1,0 +1,23 @@
+export enum OrderStatus {
+  OPEN = 'OPEN',
+  CLOSED = 'CLOSED',
+}
+
+export enum OrderTimeInForce {
+  GOOD_TIL_CANCELLED = 'GOOD_TIL_CANCELLED',
+  IMMEDIATE_OR_CANCEL = 'IMMEDIATE_OR_CANCEL',
+  FILL_OR_KILL = 'FILL_OR_KILL',
+  POST_ONLY_GOOD_TIL_CANCELLED = 'POST_ONLY_GOOD_TIL_CANCELLED',
+}
+
+export enum OrderType {
+  LIMIT = 'LIMIT',
+  MARKET = 'MARKET',
+  CEILING_LIMIT = 'CEILING_LIMIT',
+  CEILING_MARKET = 'CEILING_MARTKET',
+}
+
+export enum OrderDirection {
+  BUY = 'BUY',
+  SELL = 'SELL',
+}

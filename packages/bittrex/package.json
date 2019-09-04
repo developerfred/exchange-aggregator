@@ -1,0 +1,78 @@
+{
+  "name": "@melonproject/ea-bittrex",
+  "version": "0.0.4",
+  "description": "Integration for the Bittrex API.",
+  "main": "./lib/index.js",
+  "module": "./lib/bundle.esm.js",
+  "typings": "./lib/index.d.ts",
+  "author": "Melonport AG <team@melonport.com>",
+  "license": "GPL-3.0",
+  "homepage": "https://github.com/melonproject/exchange-aggregator#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "contributors": [
+    "Sebastian Siemssen <fubhy@fubhy.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/melonproject/exchange-aggregator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/melonproject/exchange-aggregator/issues"
+  },
+  "keywords": [
+    "ethereum",
+    "exchange",
+    "bittrex"
+  ],
+  "files": [
+    "lib/"
+  ],
+  "scripts": {
+    "prepare": "yarn build",
+    "build": "tsc -p . && rollup -c",
+    "dev": "ts-node-dev --transpileOnly ./src/dev",
+    "clean": "rimraf lib && rimraf coverage",
+    "watch": "tsc -w -p . & rollup -c -w",
+    "format": "prettier --write src/{*,**/*}.ts",
+    "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
+    "lint:tslint": "tsc --noEmit && tslint -c ../../tslint.json src/{*,**/*}.ts",
+    "lint": "yarn lint:tslint && yarn lint:prettier",
+    "test": "yarn jest --passWithNoTests",
+    "test:coverage": "yarn test --coverage",
+    "test:watch": "yarn test --watch"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.3",
+    "@types/jest": "^24.0.15",
+    "@types/node": "^12.0.10",
+    "@types/qs": "^6.5.3",
+    "@types/ramda": "^0.26.12",
+    "debug": "^4.0.1",
+    "jest": "^24.8.0",
+    "lint-staged": "^8.2.1",
+    "prettier": "^1.14.3",
+    "rimraf": "^2.6.2",
+    "rollup": "^1.16.3",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-sourcemaps": "^0.4.2",
+    "rxjs": "^6.5.2",
+    "ts-jest": "^24.0.2",
+    "ts-node-dev": "^1.0.0-pre.32",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.11.0",
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "^3.1.1"
+  },
+  "dependencies": {
+    "@melonproject/ea-common": "^0.0.3",
+    "axios": "^0.19.0",
+    "bignumber.js": "^9.0.0",
+    "qs": "^6.7.0",
+    "ramda": "^0.26.1",
+    "rxjs": "^6.5.2",
+    "rxjs-websockets": "^7.0.0"
+  },
+  "gitHead": "f0dc50488031df6473634a28bb0d95a022a69353"
+}
