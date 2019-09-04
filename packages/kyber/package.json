@@ -32,7 +32,7 @@
     "addresses.json"
   ],
   "scripts": {
-    "prepare": "yarn build",
+    "prepare": "yarn compile && yarn build",
     "build": "tsc -p . && rollup -c && cp -R src/abi src/addresses lib/",
     "dev": "ts-node-dev --transpileOnly ./src/dev",
     "compile": "node scripts/compile",
@@ -60,7 +60,6 @@
     "rollup": "^1.16.3",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-sourcemaps": "^0.4.2",
-    "smart-contracts": "git+https://github.com/KyberNetwork/smart-contracts.git#58c8b68b25625ff477f642fc81d8e090b81f7057",
     "solc": "^0.5.7",
     "ts-jest": "^24.0.2",
     "ts-node-dev": "^1.0.0-pre.32",

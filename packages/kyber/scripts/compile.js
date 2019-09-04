@@ -4,7 +4,11 @@ const solc = require('solc');
 
 const package = path.dirname(require.resolve('kyber-network-smart-contracts/package.json'));
 const source = path.join(package, 'contracts');
-const destination = path.resolve(__dirname, '..', 'abi');
+const destination = path.resolve(__dirname, '..', 'src', 'abi');
+
+if (!fs.existsSync(destination)) {
+  fs.mkdirSync(destination);
+}
 
 const version = 'v0.4.18+commit.9cf6e910';
 const contracts = [
@@ -22,7 +26,7 @@ const contracts = [
       }
     });
   });
-  
+
   const input = JSON.stringify({
     language: 'Solidity',
     sources: contracts.reduce((carry, current) => ({
@@ -31,10 +35,10 @@ const contracts = [
         content: fs.readFileSync(path.join(source, current), 'utf8'),
       },
     }), {}),
-    settings: { 
+    settings: {
       outputSelection: {
         '*': {
-          '*': ['abi'],   
+          '*': ['abi'],
         },
       },
     },
