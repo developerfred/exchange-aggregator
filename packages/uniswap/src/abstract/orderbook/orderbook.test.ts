@@ -28,14 +28,6 @@ describe('getUniswapRate', () => {
     }
 
     const dgxRate = await getUniswapRate(env, {
-      makerAsset: dgx,
-      takerAsset: weth,
-      nativeAsset: weth,
-      takerQuantity: new BigNumber(1),
-      targetExchange: '0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95',
-    });
-
-    const ethRateInDgx = await getUniswapRate(env, {
       makerAsset: weth,
       takerAsset: dgx,
       nativeAsset: weth,
@@ -43,12 +35,21 @@ describe('getUniswapRate', () => {
       targetExchange: '0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95',
     });
 
-    const obs = observeOrderbook([{ base: weth, quote: dgx }], { environment: env } );
+    const ethRateInDgx = await getUniswapRate(env, {
+      makerAsset: dgx,
+      takerAsset: weth,
+      nativeAsset: weth,
+      takerQuantity: new BigNumber(1),
+      targetExchange: '0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95',
+    });
+
+    const obs = observeOrderbook([{ base: dgx, quote: weth }], { environment: env } );
     const firstOBResult: OrderbookUpdate = await new Promise((resolve, reject) => {
       return obs.pipe(take(1)).subscribe(resolve, reject)
     });
 
     expect(firstOBResult.bids[0].price).toStrictEqual(dgxRate);
     expect(firstOBResult.asks[0].price).toStrictEqual(new BigNumber(1).dividedBy(ethRateInDgx));
+    // console.log(JSON.stringify(firstOBResult, null, 2));
   });
 });
