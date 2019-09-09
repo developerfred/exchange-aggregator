@@ -16,9 +16,7 @@ export const getUniswapRate = async (
   env: Environment,
   params: GetUniswapRateParams,
 ): Promise<GetUniswapRateResponse> => {
-  const takerQuantity = new BigNumber(params.takerQuantity).multipliedBy(
-    10 ** params.takerAsset.decimals
-  );
+  const takerQuantity = new BigNumber(params.takerQuantity).multipliedBy(10 ** params.takerAsset.decimals);
   const contract = env.contract('UniswapAdapter');
   const nativeAssetAddress = params.nativeAsset ? params.nativeAsset.address : env.addresses.Weth;
   const method = contract.methods.getInputRate(
@@ -26,7 +24,7 @@ export const getUniswapRate = async (
     nativeAssetAddress,
     params.takerAsset.address,
     takerQuantity.toString(),
-    params.makerAsset.address
+    params.makerAsset.address,
   );
 
   const output = new BigNumber((await method.call()).toString());

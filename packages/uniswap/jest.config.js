@@ -4,6 +4,7 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
+  setupFiles: ['dotenv/config'],
   testRegex: '((\\.|/)(test|spec))\\.(js|ts)$',
   moduleFileExtensions: ['ts', 'js', 'json', 'node', 'bin'],
   moduleNameMapper: {
