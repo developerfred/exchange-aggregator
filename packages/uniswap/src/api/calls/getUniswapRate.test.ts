@@ -26,13 +26,13 @@ describe('getUniswapRate', () => {
     const makerAsset: Token = {
       address: '0x123',
       decimals: 18,
-      symbol: 'ABC'
+      symbol: 'ABC',
     };
 
     const takerAsset: Token = {
       address: '0x456',
       decimals: 18,
-      symbol: 'XYZ'
+      symbol: 'XYZ',
     };
 
     const result = await getUniswapRate(env, {
@@ -45,7 +45,6 @@ describe('getUniswapRate', () => {
 
     expect(contractFactoryMock).toHaveBeenCalledWith('UniswapAdapter');
     expect(getInputRateMock).toHaveBeenCalled();
-
     expect(result.toString()).toEqual('123');
   });
 });
