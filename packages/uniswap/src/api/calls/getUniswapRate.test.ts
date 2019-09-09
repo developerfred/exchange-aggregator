@@ -2,19 +2,20 @@ import { getUniswapRate } from './getUniswapRate';
 import { toWei } from 'web3-utils';
 import { Environment } from '../../types';
 import BigNumber from 'bignumber.js';
+import { Token } from '@melonproject/ea-common';
 
 describe('getUniswapRate', () => {
   it('should properly handle the returned values', async () => {
     const contractFactoryMock = jest.fn();
-    const getInputPriceMock = jest.fn();
+    const getInputRateMock = jest.fn();
 
-    getInputPriceMock.mockImplementation((...args) => ({
+    getInputRateMock.mockImplementation((...args) => ({
       call: () => toWei('123'),
     }));
 
     contractFactoryMock.mockReturnValue({
       methods: {
-        getInputPrice: getInputPriceMock,
+        getInputRate: getInputRateMock,
       },
     });
 
@@ -22,18 +23,29 @@ describe('getUniswapRate', () => {
       contract: contractFactoryMock,
     } as any) as Environment;
 
+    const makerAsset: Token = {
+      address: '0x123',
+      decimals: 18,
+      symbol: 'ABC'
+    };
+
+    const takerAsset: Token = {
+      address: '0x456',
+      decimals: 18,
+      symbol: 'XYZ'
+    };
+
     const result = await getUniswapRate(env, {
-      makerAsset: '0x123',
-      takerAsset: '0x456',
-      nativeAsset: '0x789',
-      takerDecimals: 18,
+      makerAsset,
+      takerAsset,
+      nativeAsset: takerAsset,
       takerQuantity: new BigNumber(10),
       targetExchange: '0x321',
     });
 
     expect(contractFactoryMock).toHaveBeenCalledWith('UniswapAdapter');
-    expect(getInputPriceMock).toHaveBeenCalled();
+    expect(getInputRateMock).toHaveBeenCalled();
 
-    expect(result.toString()).toEqual('12.3');
+    expect(result.toString()).toEqual('123');
   });
 });

@@ -5,11 +5,14 @@ import { createEnvironment, addresses } from '../../index';
 import BigNumber from 'bignumber.js';
 import { Token, OrderbookUpdate } from '@melonproject/ea-common';
 import { take } from 'rxjs/operators';
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 describe('getUniswapRate', () => {
   it('should properly handle the returned values', async () => {
 
-    const eth = await new Eth(process.env.ENDPOINT);
+    const eth = await new Eth(process.env.JSON_RPC_ENDPOINT);
     const env = await createEnvironment({ eth, addresses });
     
     const weth: Token = {

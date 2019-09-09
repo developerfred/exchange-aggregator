@@ -20,10 +20,9 @@ const fetchOrders = (pair: AssetPair, options: WatchOptions): Rx.Observable<Orde
   const asks = options.quantities!.map(qty => {
     return Rx.defer(() =>
       getUniswapRate(options.environment, {
-        takerAsset: pair.base.address,
-        makerAsset: pair.quote.address,
+        takerAsset: pair.base,
+        makerAsset: pair.quote,
         takerQuantity: qty.toString(),
-        takerDecimals: pair.base.decimals,
         targetExchange: options.environment.addresses.UniswapFactory,
       }),
     ).pipe(
@@ -40,10 +39,9 @@ const fetchOrders = (pair: AssetPair, options: WatchOptions): Rx.Observable<Orde
   const bids = options.quantities!.map(qty => {
     return Rx.defer(() =>
       getUniswapRate(options.environment, {
-        takerAsset: pair.quote.address,
-        makerAsset: pair.base.address,
+        takerAsset: pair.quote,
+        makerAsset: pair.base,
         takerQuantity: qty.toString(),
-        takerDecimals: pair.quote.decimals,
         targetExchange: options.environment.addresses.UniswapFactory,
       }),
     ).pipe(

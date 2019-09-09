@@ -1,14 +1,13 @@
 import BigNumber from 'bignumber.js';
-import { toWei, fromWei } from 'web3-utils';
 import { Environment } from '../../types';
+import { Token } from '@melonproject/ea-common/lib/types';
 
 export interface GetUniswapRateParams {
   targetExchange: string;
-  nativeAsset?: string;
-  makerAsset: string;
-  takerAsset: string;
+  nativeAsset?: Token;
+  makerAsset: Token;
+  takerAsset: Token;
   takerQuantity: BigNumber | number | string;
-  takerDecimals: number;
 }
 
 export type GetUniswapRateResponse = BigNumber;
@@ -17,17 +16,19 @@ export const getUniswapRate = async (
   env: Environment,
   params: GetUniswapRateParams,
 ): Promise<GetUniswapRateResponse> => {
-  const qty = toWei(params.takerQuantity.toString());
+  const takerQuantity = new BigNumber(params.takerQuantity).multipliedBy(
+    10 ** params.takerAsset.decimals
+  );
   const contract = env.contract('UniswapAdapter');
-  const method = contract.methods.getInputPrice(
+  const nativeAssetAddress = params.nativeAsset ? params.nativeAsset.address : env.addresses.Weth;
+  const method = contract.methods.getInputRate(
     params.targetExchange,
-    params.nativeAsset,
-    params.makerAsset,
-    params.takerAsset,
-    qty,
+    nativeAssetAddress,
+    params.takerAsset.address,
+    takerQuantity.toString(),
+    params.makerAsset.address
   );
 
   const output = new BigNumber((await method.call()).toString());
-  const rate = output.multipliedBy(new BigNumber(10).pow(params.takerDecimals)).dividedBy(qty);
-  return new BigNumber(fromWei(rate.toString()));
+  return output.dividedBy(10 ** params.makerAsset.decimals);
 };

@@ -1,5 +1,5 @@
 {
-  "UniswapAdapter": "0x818E6FECD516Ecc3849DAf6845e3EC868087B755",
-  "UniswapFactory": "",
+  "UniswapAdapter": "0xf8d6885eac90db0a30b428e856af89ecb8da8400",
+  "UniswapFactory": "0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95",
   "Weth": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 }
