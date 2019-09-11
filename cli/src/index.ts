@@ -32,8 +32,6 @@ Object.keys(installed).forEach(exchange => {
   });
 });
 
-commander.parse(process.argv);
-
 commander.on('command:*', () => {
   commander.help();
   process.exit(1);
