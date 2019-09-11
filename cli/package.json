@@ -1,9 +1,10 @@
 {
-  "name": "@melonproject/ea-kyber",
-  "version": "0.0.4",
-  "description": "Integration for the Kyber API.",
-  "main": "./lib/index.js",
-  "module": "./lib/bundle.esm.js",
+  "name": "@melonproject/ea-cli",
+  "version": "0.0.0",
+  "description": "Command line interface for the exchange aggregator.",
+  "bin": {
+    "exchange-aggregator": "./bin/exchange-aggregator"
+  },
   "typings": "./lib/index.d.ts",
   "author": "Melonport AG <team@melonport.com>",
   "license": "GPL-3.0",
@@ -24,24 +25,20 @@
   "keywords": [
     "ethereum",
     "exchange",
-    "kyber"
+    "cli"
   ],
   "files": [
-    "lib/",
-    "abi/",
-    "addresses.json"
+    "lib/"
   ],
   "scripts": {
-    "prepare": "yarn compile && yarn build",
-    "build": "tsc -p . && rollup -c && cp -R src/abi src/addresses lib/",
-    "dev": "ts-node-dev --transpileOnly ./src/dev",
-    "compile": "node scripts/compile",
+    "prepare": "yarn build",
+    "build": "tsc src/index.ts --out bin/script.js",
     "clean": "rimraf lib && rimraf coverage",
-    "watch": "tsc -w -p . & rollup -c -w",
+    "watch": "tsc -w -p .",
     "typecheck": "tsc -p . --noEmit",
     "format": "prettier --write src/{*,**/*}.ts",
     "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
-    "lint:tslint": "tsc --noEmit && tslint -c ../../tslint.json src/{*,**/*}.ts",
+    "lint:tslint": "tsc --noEmit && tslint -c ../tslint.json src/{*,**/*}.ts",
     "lint": "yarn lint:tslint && yarn lint:prettier",
     "test": "yarn jest --passWithNoTests",
     "test:coverage": "yarn test --coverage",
@@ -54,14 +51,10 @@
     "@types/ramda": "^0.26.12",
     "debug": "^4.0.1",
     "jest": "^24.8.0",
-    "kyber-network-smart-contracts": "git+https://github.com/KyberNetwork/smart-contracts.git#58c8b68b25625ff477f642fc81d8e090b81f7057",
     "lint-staged": "^8.2.1",
-    "prettier": "^1.14.3",
+    "prettier": "^1.18.2",
     "rimraf": "^2.6.2",
-    "rollup": "^1.16.3",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-sourcemaps": "^0.4.2",
-    "solc": "^0.5.11",
+    "rxjs": "^6.5.2",
     "ts-jest": "^24.0.2",
     "ts-node-dev": "^1.0.0-pre.32",
     "tslint": "^5.11.0",
@@ -70,14 +63,9 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/ea-common": "^0.0.3",
-    "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
-    "ramda": "^0.26.1",
-    "rxjs": "^6.5.2",
-    "web3-eth": "^2.0.0-alpha.1",
-    "web3-eth-contract": "^2.0.0-alpha.1",
-    "web3-utils": "^2.0.0-alpha.1"
+    "commander": "^3.0.1",
+    "rxjs": "^6.5.2"
   },
   "gitHead": "f0dc50488031df6473634a28bb0d95a022a69353"
 }

@@ -1,10 +1,13 @@
 {
   "private": true,
   "workspaces": [
-    "packages/*"
+    "common",
+    "cli",
+    "exchanges/*"
   ],
   "scripts": {
     "postinstall": "lerna exec -- yarn && lerna run prepare",
+    "reinstall": "lerna exec -- rimraf node_modules && rimraf node_modules && yarn",
     "clean": "lerna run clean",
     "build": "lerna run build",
     "test": "lerna run test",
@@ -14,7 +17,7 @@
     "predeploy": "yarn && yarn clean && yarn build && yarn lint && yarn test",
     "deploy": "lerna publish -m \"chore: Publish\"",
     "deploy:next": "yarn deploy --canary --preid next",
-    "watch": "trap \"kill 0\" SIGINT; for f in `ls packages`; do (cd `pwd`/packages/$f && yarn run watch) & done; "
+    "watch": "trap \"kill 0\" SIGINT; for f in `ls exchanges`; do (cd `pwd`/exchanges/$f && yarn run watch) & done; "
   },
   "devDependencies": {
     "husky": "^2.7.0",

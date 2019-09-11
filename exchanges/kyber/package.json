@@ -1,7 +1,7 @@
 {
-  "name": "@melonproject/ea-bitfinex",
+  "name": "@melonproject/ea-kyber",
   "version": "0.0.4",
-  "description": "Integration for the Bitfinex API.",
+  "description": "Integration for the Kyber API.",
   "main": "./lib/index.js",
   "module": "./lib/bundle.esm.js",
   "typings": "./lib/index.d.ts",
@@ -24,16 +24,18 @@
   "keywords": [
     "ethereum",
     "exchange",
-    "bitfinex",
-    "ethfinex"
+    "kyber"
   ],
   "files": [
-    "lib/"
+    "lib/",
+    "abi/",
+    "addresses.json"
   ],
   "scripts": {
-    "prepare": "yarn build",
-    "build": "tsc -p . && rollup -c",
+    "prepare": "yarn compile && yarn build",
+    "build": "tsc -p . && rollup -c && cp -R src/abi src/addresses lib/",
     "dev": "ts-node-dev --transpileOnly ./src/dev",
+    "compile": "node scripts/compile",
     "clean": "rimraf lib && rimraf coverage",
     "watch": "tsc -w -p . & rollup -c -w",
     "typecheck": "tsc -p . --noEmit",
@@ -46,21 +48,22 @@
     "test:watch": "yarn test --watch"
   },
   "devDependencies": {
+    "@types/commander": "^2.12.2",
     "@types/debug": "^4.1.3",
     "@types/jest": "^24.0.15",
     "@types/node": "^12.0.10",
     "@types/ramda": "^0.26.12",
+    "commander": "^3.0.1",
     "debug": "^4.0.1",
-    "husky": "^2.7.0",
     "jest": "^24.8.0",
+    "kyber-network-smart-contracts": "git+https://github.com/KyberNetwork/smart-contracts.git#58c8b68b25625ff477f642fc81d8e090b81f7057",
     "lint-staged": "^8.2.1",
-    "prettier": "^1.18.2",
+    "prettier": "^1.14.3",
     "rimraf": "^2.6.2",
     "rollup": "^1.16.3",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-sourcemaps": "^0.4.2",
-    "rxjs": "^6.5.2",
-    "solc": "^0.5.7",
+    "solc": "^0.5.11",
     "ts-jest": "^24.0.2",
     "ts-node-dev": "^1.0.0-pre.32",
     "tslint": "^5.11.0",
@@ -72,10 +75,11 @@
     "@melonproject/ea-common": "^0.0.3",
     "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
-    "isomorphic-ws": "^4.0.1",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
-    "rxjs-websockets": "^7.0.0"
+    "web3-eth": "^2.0.0-alpha.1",
+    "web3-eth-contract": "^2.0.0-alpha.1",
+    "web3-utils": "^2.0.0-alpha.1"
   },
   "gitHead": "f0dc50488031df6473634a28bb0d95a022a69353"
 }

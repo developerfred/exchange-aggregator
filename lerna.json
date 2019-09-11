@@ -1,7 +1,11 @@
 {
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "packages": ["packages/*"],
+  "packages": [
+    "common",
+    "cli",
+    "exchanges/*"
+  ],
   "version": "independent",
   "hoist": false
 }
