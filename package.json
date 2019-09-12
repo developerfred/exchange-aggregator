@@ -7,7 +7,6 @@
   ],
   "scripts": {
     "postinstall": "lerna exec -- yarn && lerna run prepare",
-    "reinstall": "lerna exec -- rimraf node_modules && rimraf node_modules && yarn",
     "clean": "lerna run clean",
     "build": "lerna run build",
     "test": "lerna run test",
