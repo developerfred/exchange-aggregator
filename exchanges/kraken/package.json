@@ -32,7 +32,7 @@
   "scripts": {
     "prepare": "yarn build",
     "build": "tsc -p . && rollup -c",
-    "dev": "ts-node-dev --transpileOnly ./src/dev",
+    "dev": "ts-node-dev --respawn --transpileOnly src/dev",
     "clean": "rimraf lib && rimraf coverage",
     "watch": "tsc -w -p . & rollup -c -w",
     "typecheck": "tsc -p . --noEmit",

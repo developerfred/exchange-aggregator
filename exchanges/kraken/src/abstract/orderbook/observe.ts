@@ -2,7 +2,6 @@ import * as R from 'ramda';
 import * as Rx from 'rxjs';
 import BigNumber from 'bignumber.js';
 import { OrderbookObserver, Orderbook, Symbol } from '@melonproject/ea-common';
-import { update, snapshot } from '@melonproject/ea-common/lib/track';
 import { subscribe } from '../../api/websocket';
 import { filter, map, share } from 'rxjs/operators';
 import { fromStandarPair } from '../mapping';
@@ -24,6 +23,66 @@ const isUpdate = R.compose(
   R.cond([[R.has('a'), R.T], [R.has('b'), R.T], [R.T, R.F]]),
   R.nth(1),
 ) as (payload: [string, BookMessage]) => payload is [string, BookUpdateMessage];
+
+const update = (
+  subscriber: Rx.Subscriber<Orderbook<Symbol>>,
+  depth: number,
+  state: (message: Orderbook<Symbol>) => Orderbook<Symbol>,
+) => (message: Orderbook<Symbol>) => {
+  const current = state(message);
+
+  current.asks = message.asks
+    .reduce((carry, current) => {
+      // Temporarily remove the updated price level from the state.
+      const out = carry.filter(item => !item.price.isEqualTo(current.price));
+      // Only (re-)add the price level if it's not zero.
+      return current.volume.isZero() ? out : out.concat(current);
+    }, current.asks)
+    .sort((a, b) => a.price.comparedTo(b.price))
+    .slice(0, depth);
+
+  current.bids = message.bids
+    .reduce((carry, current) => {
+      // Temporarily remove the updated price level from the state.
+      const out = carry.filter(item => !item.price.isEqualTo(current.price));
+      // Only (re-)add the price level if it's not zero.
+      return current.volume.isZero() ? out : out.concat(current);
+    }, current.asks)
+    .sort((a, b) => b.price.comparedTo(a.price))
+    .slice(0, depth);
+
+  subscriber.next({
+    quote: current.quote,
+    base: current.base,
+    asks: current.asks.slice(),
+    bids: current.bids.slice(),
+  });
+};
+
+const snapshot = (
+  subscriber: Rx.Subscriber<Orderbook<Symbol>>,
+  depth: number,
+  state: (message: Orderbook<Symbol>) => Orderbook<Symbol>,
+) => (message: Orderbook<Symbol>) => {
+  const current = state(message);
+
+  current.asks = message.asks
+    .sort((a, b) => a.price.comparedTo(b.price))
+    .filter(item => !item.volume.isEqualTo(0))
+    .slice(0, depth);
+
+  current.bids = message.bids
+    .sort((a, b) => b.price.comparedTo(a.price))
+    .filter(item => !item.volume.isEqualTo(0))
+    .slice(0, depth);
+
+  subscriber.next({
+    quote: current.quote,
+    base: current.base,
+    asks: current.asks.slice(),
+    bids: current.bids.slice(),
+  });
+};
 
 const defaults = {
   depth: 10,

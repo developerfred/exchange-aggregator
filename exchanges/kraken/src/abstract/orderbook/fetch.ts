@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { OrderbookFetcher, Orderbook, OrderbookEntry, Symbol } from '@melonproject/ea-common';
+import { OrderbookFetcher, Symbol } from '@melonproject/ea-common';
 import { depth, DepthParams } from '../../api/public/depth';
 
 export interface FetchOptions {
@@ -16,12 +16,12 @@ export const fetch: OrderbookFetcher<FetchOptions> = async options => {
     }),
   ).shift();
 
-  const asks: OrderbookEntry[] = orderbook.asks.map(([price, volume]) => ({
+  const asks = orderbook.asks.map(([price, volume]) => ({
     price: new BigNumber(price),
     volume: new BigNumber(volume),
   }));
 
-  const bids: OrderbookEntry[] = orderbook.bids.map(([price, volume]) => ({
+  const bids = orderbook.bids.map(([price, volume]) => ({
     price: new BigNumber(price),
     volume: new BigNumber(volume),
   }));
@@ -31,5 +31,5 @@ export const fetch: OrderbookFetcher<FetchOptions> = async options => {
     quote: options.quote,
     asks,
     bids,
-  } as Orderbook;
+  };
 };

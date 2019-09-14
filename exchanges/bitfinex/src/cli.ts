@@ -1,14 +1,13 @@
 import * as Rx from 'rxjs';
 import commander from 'commander';
 import * as readline from 'readline';
-import { observe, fetch } from './abstract/orderbook';
+import { observe } from './abstract/orderbook';
 
 // tslint:disable-next-line:variable-name
 const Table = require('cli-table');
 
 interface OrderbookOptions {
   depth: string;
-  watch: boolean;
 }
 
 // tslint:disable-next-line:no-default-export
@@ -16,17 +15,14 @@ export default (program: typeof commander, args: string[]) => {
   program
     .command('orderbook <base> <quote>')
     .option('--depth [depth]', 'The depth of the orderbook.', 10)
-    .option('--watch', 'The depth of the orderbook.', false)
     .action(async (base: string, quote: string, options: OrderbookOptions) => {
       const opts = {
         base,
         quote,
-        depth: options.depth as any,
+        length: options.depth as any,
       };
 
-      const operator = options.watch ? observe(opts) : fetch(opts);
-
-      Rx.from(operator).subscribe({
+      Rx.from(observe(opts)).subscribe({
         next: orderbook => {
           const data = new Table({
             head: ['TYPE', 'VOLUME', 'PRICE'],

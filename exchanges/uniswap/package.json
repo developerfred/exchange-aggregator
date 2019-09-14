@@ -35,7 +35,7 @@
   "scripts": {
     "prepare": "yarn compile && yarn build",
     "build": "exit 0 || tsc -p . && rollup -c && cp -R src/abi src/addresses lib/",
-    "dev": "ts-node-dev --transpileOnly ./src/dev",
+    "dev": "ts-node-dev --respawn --transpileOnly src/dev",
     "compile": "node scripts/compile",
     "clean": "rimraf lib && rimraf coverage",
     "watch": "tsc -w -p . & rollup -c -w",
