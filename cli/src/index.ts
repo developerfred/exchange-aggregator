@@ -24,12 +24,15 @@ const installed = exchanges.reduce(
 
 Object.keys(installed).forEach(exchange => {
   const dependency = installed[exchange];
-  commander.command(exchange).action(() => {
-    const program = new Command();
-    const args = process.argv.slice(1);
+  commander
+    .command(exchange)
+    .action(() => {
+      const program = new Command();
+      const args = process.argv.slice(1);
 
-    require(dependency).default(program, args);
-  });
+      require(dependency).default(program, args);
+    })
+    .allowUnknownOption();
 });
 
 commander.on('command:*', () => {
