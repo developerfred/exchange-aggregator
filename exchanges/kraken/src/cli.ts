@@ -18,16 +18,13 @@ export default (program: typeof commander, args: string[]) => {
     .option('--depth [depth]', 'The depth of the orderbook.', 10)
     .option('--watch', 'The depth of the orderbook.', false)
     .action(async (base: string, quote: string, options: OrderbookOptions) => {
-      const operator = options.watch
-        ? observe({
-            pairs: [{ base, quote }],
-            depth: options.depth as any,
-          })
-        : fetch({
-            base,
-            quote,
-            depth: options.depth as any,
-          });
+      const opts = {
+        base,
+        quote,
+        depth: options.depth as any,
+      };
+
+      const operator = options.watch ? observe(opts) : fetch(opts);
 
       Rx.from(operator).subscribe({
         next: orderbook => {

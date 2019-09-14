@@ -1,7 +1,7 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
 import BigNumber from 'bignumber.js';
-import { OrderbookObserver, SymbolAssetPair, Orderbook, Symbol } from '@melonproject/ea-common';
+import { OrderbookObserver, Orderbook, Symbol } from '@melonproject/ea-common';
 import { update, snapshot } from '@melonproject/ea-common/lib/track';
 import { subscribe } from '../../api/websocket';
 import { filter, map, share } from 'rxjs/operators';
@@ -11,15 +11,8 @@ import { BookUpdateMessage, BookMessage, SubscriptionParams, BookSnapshotMessage
 export interface WatchOptions {
   depth?: SubscriptionParams['depth'];
   interval?: SubscriptionParams['interval'];
-  pairs: SymbolAssetPair[];
-}
-
-interface KeyedAssetPairs {
-  [key: string]: SymbolAssetPair;
-}
-
-interface KeyedState {
-  [key: string]: Orderbook<Symbol>;
+  base: Symbol;
+  quote: Symbol;
 }
 
 const isSnapshot = R.compose(
@@ -38,26 +31,13 @@ const defaults = {
 
 export const observe: OrderbookObserver<WatchOptions> = options =>
   new Rx.Observable(subscriber => {
-    const pairsKeyed = options.pairs.reduce(
-      (carry, current) => ({
-        ...carry,
-        [fromStandarPair(current)]: current,
-      }),
-      {},
-    ) as KeyedAssetPairs;
-
-    const stateKeyed = Object.values(pairsKeyed).reduce(
-      (carry, current) => ({
-        ...carry,
-        [`${current.base}/${current.quote}`]: {
-          base: current.base,
-          quote: current.quote,
-          asks: [],
-          bids: [],
-        },
-      }),
-      {},
-    ) as KeyedState;
+    const pair = fromStandarPair(options);
+    const state: Orderbook<Symbol> = {
+      base: options.base,
+      quote: options.quote,
+      asks: [],
+      bids: [],
+    };
 
     // We need to maintain the depth of the subscription because of the
     // way Kraken provides so called "republish" records.
@@ -65,18 +45,17 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
     // @see https://support.kraken.com/hc/en-us/articles/360022326871-Public-WebSockets-API-common-questions
     const opts = {
       ...defaults,
-      ...options,
+      ...(options.depth && { depth: options.depth }),
     } as WatchOptions;
 
-    const messages$ = subscribe<BookMessage>(Object.keys(pairsKeyed), {
+    const messages$ = subscribe<BookMessage>(pair, {
       ...opts,
       name: 'book',
     }).pipe(share());
 
     const updates$ = messages$.pipe(
       filter(isUpdate),
-      map(([key, message]) => {
-        const pair = pairsKeyed[key];
+      map(([_, message]) => {
         const asks = (message.a || []).map(([price, volume]) => ({
           price: new BigNumber(price),
           volume: new BigNumber(volume),
@@ -87,18 +66,13 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
           volume: new BigNumber(volume),
         }));
 
-        return {
-          ...pair,
-          asks,
-          bids,
-        };
+        return { asks, bids };
       }),
     );
 
     const snapshots$ = messages$.pipe(
       filter(isSnapshot),
-      map(([key, message]) => {
-        const pair = pairsKeyed[key];
+      map(([_, message]) => {
         const asks = (message.as || []).map(([price, volume]) => ({
           price: new BigNumber(price),
           volume: new BigNumber(volume),
@@ -109,17 +83,12 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
           volume: new BigNumber(volume),
         }));
 
-        return {
-          ...pair,
-          asks,
-          bids,
-        };
+        return { asks, bids };
       }),
     );
 
-    const state = (message: Orderbook<Symbol>) => stateKeyed[`${message.base}/${message.quote}`];
-    const updates = updates$.subscribe(update(subscriber, opts.depth, state));
-    const snapshots = snapshots$.subscribe(snapshot(subscriber, opts.depth, state));
+    const updates = updates$.subscribe(update(subscriber, opts.depth, () => state));
+    const snapshots = snapshots$.subscribe(snapshot(subscriber, opts.depth, () => state));
 
     return () => {
       updates.unsubscribe();
