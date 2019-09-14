@@ -1,7 +1,8 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
 import BigNumber from 'bignumber.js';
-import { OrderbookObserver, OrderbookEntry, SymbolAssetPair } from '@melonproject/ea-common';
+import { OrderbookObserver, SymbolAssetPair, Orderbook, Symbol } from '@melonproject/ea-common';
+import { update, snapshot } from '@melonproject/ea-common/lib/track';
 import { subscribe } from '../../api/websocket';
 import { filter, map, share } from 'rxjs/operators';
 import { fromStandarPair } from '../mapping';
@@ -18,10 +19,7 @@ interface KeyedAssetPairs {
 }
 
 interface KeyedState {
-  [key: string]: {
-    asks: OrderbookEntry[];
-    bids: OrderbookEntry[];
-  };
+  [key: string]: Orderbook<Symbol>;
 }
 
 const isSnapshot = R.compose(
@@ -52,6 +50,8 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
       (carry, current) => ({
         ...carry,
         [`${current.base}/${current.quote}`]: {
+          base: current.base,
+          quote: current.quote,
           asks: [],
           bids: [],
         },
@@ -117,49 +117,9 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
       }),
     );
 
-    const updates = updates$.subscribe(message => {
-      const state = stateKeyed[`${message.base}/${message.quote}`];
-
-      message.asks.forEach(ask => {
-        state.asks = state.asks.filter(item => !item.price.isEqualTo(ask.price));
-      });
-
-      message.bids.forEach(bid => {
-        state.bids = state.bids.filter(item => !item.price.isEqualTo(bid.price));
-      });
-
-      state.asks = state.asks
-        .concat(message.asks)
-        .sort((a, b) => a.price.comparedTo(b.price))
-        .filter(item => !item.volume.isEqualTo(0))
-        .slice(0, opts.depth);
-
-      state.bids = state.bids
-        .concat(message.bids)
-        .sort((a, b) => b.price.comparedTo(a.price))
-        .filter(item => !item.volume.isEqualTo(0))
-        .slice(0, opts.depth);
-
-      subscriber.next({
-        base: message.base,
-        quote: message.quote,
-        asks: state.asks,
-        bids: state.bids,
-      });
-    });
-
-    const snapshots = snapshots$.subscribe(message => {
-      const state = stateKeyed[`${message.base}/${message.quote}`];
-      state.asks = message.asks;
-      state.bids = message.bids;
-
-      subscriber.next({
-        base: message.base,
-        quote: message.quote,
-        asks: state.asks,
-        bids: state.bids,
-      });
-    });
+    const state = (message: Orderbook<Symbol>) => stateKeyed[`${message.base}/${message.quote}`];
+    const updates = updates$.subscribe(update(subscriber, opts.depth, state));
+    const snapshots = snapshots$.subscribe(snapshot(subscriber, opts.depth, state));
 
     return () => {
       updates.unsubscribe();
