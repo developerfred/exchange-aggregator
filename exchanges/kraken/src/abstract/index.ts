@@ -1,1 +1,3 @@
-export { observeOrderbook } from './orderbook';
+import * as orderbook from './orderbook';
+
+export { orderbook };

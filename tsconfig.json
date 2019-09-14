@@ -2,12 +2,7 @@
   "compilerOptions": {
     "target": "es2015",
     "module": "commonjs",
-    "lib": [
-      "es2015",
-      "es2017.object",
-      "es2017.string",
-      "dom"
-    ],
+    "lib": ["es2015", "es2017.object", "es2017.string", "dom"],
     "declaration": true,
     "sourceMap": false,
     "skipLibCheck": true,
@@ -18,7 +13,7 @@
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
     "allowJs": false,
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "moduleResolution": "node",
     "removeComments": false,
     "resolveJsonModule": true

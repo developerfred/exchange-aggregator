@@ -1,4 +1,4 @@
-import { AssetPair } from '@melonproject/ea-common';
+import { SymbolAssetPair } from '@melonproject/ea-common';
 
 const mapping = {
   BTC: 'XBT',
@@ -8,8 +8,8 @@ export const fromStandardSymbol = (symbol: string) => {
   return mapping[symbol] || symbol;
 };
 
-export const fromStandarPair = (pair: AssetPair) => {
-  const base = fromStandardSymbol(pair.base.symbol);
-  const quote = fromStandardSymbol(pair.quote.symbol);
+export const fromStandarPair = (pair: SymbolAssetPair) => {
+  const base = fromStandardSymbol(pair.base as string);
+  const quote = fromStandardSymbol(pair.quote as string);
   return `${base}/${quote}`;
 };

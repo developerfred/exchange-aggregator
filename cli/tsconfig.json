@@ -2,13 +2,8 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib",
-    "esModuleInterop": true
+    "outDir": "lib"
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "**/*.test.*"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["**/*.test.*"]
 }
