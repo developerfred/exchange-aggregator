@@ -1,4 +1,4 @@
 import { fetch as fetchOrderbook } from './fetch';
+import { observe as watchOrderbook } from './observe';
 
-// export { observe } from './observe';
-export { fetchOrderbook };
+export { fetchOrderbook, watchOrderbook };

@@ -243,3 +243,5 @@ export interface OrderBookUpdateMessage {
   instrument_code: string;
   changes: [['BUY' | 'SELL', string, string]];
 }
+
+export type OrderBookMessage = OrderBookSnapshotMessage | OrderBookUpdateMessage;

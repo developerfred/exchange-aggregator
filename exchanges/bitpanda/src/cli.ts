@@ -13,12 +13,15 @@ import {
   // Websocket
   subscribe,
 } from './api';
-import { fetchOrderbook } from './abstract';
+import {
+  // fetchOrderbook,
+  watchOrderbook,
+} from './abstract';
 import { SubscriptionParams, OrderBookParams } from './api/types';
 import * as Rx from 'rxjs';
+// import * as readline from 'readline';
 // import { log } from './debug';
 // import { observe } from './abstract';
-// import * as readline from 'readline';
 
 // tslint:disable-next-line:variable-name
 const Table = require('cli-table');
@@ -120,35 +123,39 @@ export default (program: typeof commander, args: string[]) => {
   });
 
   /* ABSTRACT */
-  program.command('fetch').action(async (base: string, quote: string) => {
+  program.command('watch').action(async (base: string, quote: string) => {
     const opts = {
       base,
       quote,
     };
 
     // const operator = options.watch ? observe(opts) : fetch(opts);
-    const operator = fetchOrderbook(opts);
+    // const operator = fetchOrderbook(opts);
+    const operator = watchOrderbook(opts);
 
     Rx.from(operator).subscribe({
-      next: orderbook => {
-        const data = new Table({
-          head: ['TYPE', 'VOLUME', 'PRICE'],
-        });
-
-        orderbook.asks.forEach(entry => {
-          data.push(['ASK', entry.volume.toFixed(8), entry.price.toFixed(8)]);
-        });
-
-        data.push([]);
-
-        orderbook.bids.forEach(entry => {
-          data.push(['BID', entry.volume.toFixed(8), entry.price.toFixed(8)]);
-        });
-
-        readline.cursorTo(process.stdout, 0, 0);
-        readline.clearScreenDown(process.stdout);
-        console.log(data.toString());
+      next: value => {
+        console.log(value);
       },
+      // next: orderbook => {
+      //   const data = new Table({
+      //     head: ['TYPE', 'VOLUME', 'PRICE'],
+      //   });
+
+      //   orderbook.asks.forEach(entry => {
+      //     data.push(['ASK', entry.volume.toFixed(8), entry.price.toFixed(8)]);
+      //   });
+
+      //   data.push([]);
+
+      //   orderbook.bids.forEach(entry => {
+      //     data.push(['BID', entry.volume.toFixed(8), entry.price.toFixed(8)]);
+      //   });
+
+      //   readline.cursorTo(process.stdout, 0, 0);
+      //   readline.clearScreenDown(process.stdout);
+      //   console.log(data.toString());
+      // },
       error: error => {
         console.error(error);
         process.exit(1);

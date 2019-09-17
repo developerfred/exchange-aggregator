@@ -1,3 +1,3 @@
-import { fetchOrderbook } from './orderbook';
+import { fetchOrderbook, watchOrderbook } from './orderbook';
 
-export { fetchOrderbook };
+export { fetchOrderbook, watchOrderbook };

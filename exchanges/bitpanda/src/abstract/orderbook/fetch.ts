@@ -13,15 +13,19 @@ export const fetch: OrderbookFetcher<FetchOptions> = async options => {
     level: 3,
   });
 
-  const asks = ob.asks.map(value => ({
-    price: new BigNumber(value.price),
-    volume: new BigNumber(value.amount),
-  }));
+  const asks = ob.asks
+    .map(value => ({
+      price: new BigNumber(value.price),
+      volume: new BigNumber(value.amount),
+    }))
+    .sort((a, b) => b.price.comparedTo(a.price));
 
-  const bids = ob.bids.map(value => ({
-    price: new BigNumber(value.price),
-    volume: new BigNumber(value.amount),
-  }));
+  const bids = ob.bids
+    .map(value => ({
+      price: new BigNumber(value.price),
+      volume: new BigNumber(value.amount),
+    }))
+    .sort((a, b) => b.price.comparedTo(a.price));
 
   return {
     base: options.base,

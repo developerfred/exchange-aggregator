@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs';
-import { map, filter, share, concatMap } from 'rxjs/operators';
+import { map, share, concatMap } from 'rxjs/operators';
 import { connect } from './connect';
 import { SubscriptionParams } from '../types';
 
