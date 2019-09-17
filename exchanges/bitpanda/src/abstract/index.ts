@@ -1,3 +1,3 @@
-// import * as orderbook from './orderbook';
+import { fetchOrderbook } from './orderbook';
 
-// export { orderbook };
+export { fetchOrderbook };

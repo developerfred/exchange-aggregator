@@ -1,12 +1,12 @@
 import { publicRequest } from '../common';
-import { feesResponse } from '../types';
+import { FeesResponse } from '../types';
 
-export const fees = async (): Promise<feesResponse[]> => {
+export const fees = async (): Promise<FeesResponse[]> => {
   const response = (await publicRequest('get', `fees`)).data;
 
   if (response.error && !!response.error.length) {
     throw new Error(response.error);
   }
 
-  return response as feesResponse[];
+  return response as FeesResponse[];
 };

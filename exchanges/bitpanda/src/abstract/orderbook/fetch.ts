@@ -1,35 +1,32 @@
-// import BigNumber from 'bignumber.js';
-// import { OrderbookFetcher, Symbol } from '@melonproject/ea-common';
-// import { depth, DepthParams } from '../../api/public/depth';
+import BigNumber from 'bignumber.js';
+import { OrderbookFetcher, Symbol } from '@melonproject/ea-common';
+import { orderbook } from '../../api';
 
-// export interface FetchOptions {
-//   depth?: DepthParams['count'];
-//   base: Symbol;
-//   quote: Symbol;
-// }
+export interface FetchOptions {
+  base: Symbol;
+  quote: Symbol;
+}
 
-// export const fetch: OrderbookFetcher<FetchOptions> = async options => {
-//   const orderbook = Object.values(
-//     await depth({
-//       pair: `${options.base}${options.quote}`,
-//       count: options.depth,
-//     }),
-//   ).shift();
+export const fetch: OrderbookFetcher<FetchOptions> = async options => {
+  const ob = await orderbook({
+    instrument_code: `${options.base}_${options.quote}`,
+    level: 3,
+  });
 
-//   const asks = orderbook.asks.map(([price, volume]) => ({
-//     price: new BigNumber(price),
-//     volume: new BigNumber(volume),
-//   }));
+  const asks = ob.asks.map(value => ({
+    price: new BigNumber(value.price),
+    volume: new BigNumber(value.amount),
+  }));
 
-//   const bids = orderbook.bids.map(([price, volume]) => ({
-//     price: new BigNumber(price),
-//     volume: new BigNumber(volume),
-//   }));
+  const bids = ob.bids.map(value => ({
+    price: new BigNumber(value.price),
+    volume: new BigNumber(value.amount),
+  }));
 
-//   return {
-//     base: options.base,
-//     quote: options.quote,
-//     asks,
-//     bids,
-//   };
-// };
+  return {
+    base: options.base,
+    quote: options.quote,
+    asks,
+    bids,
+  };
+};

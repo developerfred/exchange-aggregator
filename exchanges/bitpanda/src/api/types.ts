@@ -3,6 +3,11 @@ export interface Authentication {
 }
 
 /* REST PUBLIC */
+export interface OrderBookParams {
+  instrument_code: string;
+  level?: 1 | 2 | 3;
+}
+
 export interface OrderBookEntryResponse {
   price: string;
   amount: string;
@@ -73,18 +78,18 @@ export interface BalancesResponse {
 }
 
 export interface OrderResponse {
-  trigger_price: string;
   order_id: string;
   account_id: string;
   instrument_code: string;
-  time: string;
-  side: string;
-  price: string;
   amount: string;
   filled_amount: string;
+  side: string;
   type: string;
+  time: string;
+  price: string;
   sequence: number;
-  status: string;
+  status?: string;
+  trigger_price?: string;
 }
 
 export interface OrdersHistoryResponse {
@@ -103,12 +108,32 @@ export interface SubscriptionParams {
   channels: Channels[];
 }
 
-export type Channels = ChannelOrderBook | ChannelPriceTicks | ChannelAccountHistory;
+export interface UnsubscriptionParams {
+  type: 'UNSUBSCRIBE';
+  channels: ChannelNames[];
+}
+
+export type Channels =
+  | ChannelOrderBook
+  | ChannelPriceTicks
+  | ChannelAccountHistory
+  | ChannelCandlesticksParams
+  | ChannelMarketTicker;
 
 export interface ChannelOrderBook {
   name: 'ORDER_BOOK';
   depth: number;
   instrument_codes: string[];
+}
+
+export interface SubscriptionOrderBook extends SubscriptionParams {
+  channels: [
+    {
+      name: 'ORDER_BOOK';
+      depth: number;
+      instrument_codes: string[];
+    },
+  ];
 }
 
 export interface ChannelAccountHistory {
@@ -121,11 +146,57 @@ export interface ChannelPriceTicks {
   instrument_codes: string[];
 }
 
-// export interface ChannelCandlesticksParams;
+export type TimeGranularity =
+  | {
+      unit: 'MINUTES';
+      period: 1;
+    }
+  | {
+      unit: 'MINUTES';
+      period: 5;
+    }
+  | {
+      unit: 'MINUTES';
+      period: 15;
+    }
+  | {
+      unit: 'MINUTES';
+      period: 30;
+    }
+  | {
+      unit: 'HOURS';
+      period: 1;
+    }
+  | {
+      unit: 'HOURS';
+      period: 4;
+    }
+  | {
+      unit: 'DAYS';
+      period: 1;
+    }
+  | {
+      unit: 'WEEKS';
+      period: 1;
+    }
+  | {
+      unit: 'MONTHS';
+      period: 1;
+    };
+
+export interface ChannelCandlesticksParams {
+  instrument_code: string;
+  time_granularity: TimeGranularity;
+}
 
 export interface ChannelCandlesticks {
   name: 'CANDLESTICKS';
-  properties: string[];
+  properties: ChannelCandlesticksParams[];
+}
+
+export interface ChannelMarketTicker {
+  name: 'MARKET_TICKER';
+  instrument_codes: string[];
 }
 
 /* WEBSOCKET MESSAGE */
@@ -137,25 +208,38 @@ export type ChannelNames =
   | 'CANDLESTICKS'
   | 'MARKET_TICKER'
   | 'SYSTEM'
-  | 'ACCOUNT_HISTORYs';
-export type ChannelTypes =
-  | 'SUBSCRIBE'
+  | 'ACCOUNT_HISTORYS';
+
+export type MessageTypes =
   | 'SUBSCRIPTIONS'
+  | 'UNSUBSCRIBED'
   | 'ERROR'
   | 'CONNECTION_CLOSING'
-  | 'UNSUBSCRIBED'
   | 'HEARTBEAT'
   | 'MARKET_UPDATES';
 
-export interface UnsubscriptionParams {
-  type: 'UNSUBSCRIBE';
-  channels: ChannelNames[];
+export interface SubscriptionMessage {
+  type: 'SUBSCRIPTIONS';
+  channels: Channels;
 }
 
-export interface SubscriptionMessage {
+export interface UnsubscriptionMessage {
+  type: 'UNSUBSCRIBED';
   channel_name: ChannelNames;
-  type: ChannelTypes;
-  subscription?: string;
-  time?: string;
-  error?: string;
+}
+
+// ORDER BOOK
+export interface OrderBookSnapshotMessage {
+  type: 'ORDER_BOOK_SNAPSHOT';
+  name: 'ORDER_BOOK';
+  instrument_code: string;
+  bids: [[string, string]];
+  asks: [[string, string]];
+}
+
+export interface OrderBookUpdateMessage {
+  type: 'ORDER_BOOK_UPDATE';
+  name: 'ORDER_BOOK';
+  instrument_code: string;
+  changes: [['BUY' | 'SELL', string, string]];
 }

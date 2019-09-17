@@ -1,7 +1,7 @@
 import * as Rx from 'rxjs';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
-// import * as debug from '../../debug';
 import { AnyMessage } from '../types';
+// import * as debug from '../../debug';
 
 // tslint:disable-next-line:variable-name
 const Ws = require('isomorphic-ws');

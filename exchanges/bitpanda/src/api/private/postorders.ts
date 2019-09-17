@@ -1,48 +1,50 @@
 import { privateRequest } from '../common';
 import { Authentication } from '../types';
 
-export type orderType = 'LIMIT' | 'MARKET' | 'STOP';
-export type orderSide = 'SELL' | 'BUY';
+export type OrderType = 'LIMIT' | 'MARKET' | 'STOP';
+export type OrderSide = 'SELL' | 'BUY';
 
-export interface postOrdersParams {
+export type Order = PostOrdersLimitParams | PostOrdersMarketParams | PostOrdersStopParams;
+
+export interface PostOrdersParams {
   instrument_code: string;
-  side: orderSide;
+  side: OrderSide;
   amount: string;
 }
 
-export interface postOrdersLimitParams extends postOrdersParams {
+export interface PostOrdersLimitParams extends PostOrdersParams {
   type: 'LIMIT';
   price: string;
 }
 
-export interface postOrdersMarketParams extends postOrdersParams {
+export interface PostOrdersMarketParams extends PostOrdersParams {
   type: 'MARKET';
 }
 
-export interface postOrdersStopParams extends postOrdersParams {
+export interface PostOrdersStopParams extends PostOrdersParams {
   type: 'STOP';
   price: string;
   trigger_price: string;
 }
 
-export interface postOrdersResult {
+export interface PostOrdersResult {
   order_id: string;
   account_id: string;
   instrument_code: string;
   time: string;
-  side: orderSide;
+  side: OrderSide;
   price: string;
   amount: string;
   filled_amount: string;
-  type: orderType;
+  type: OrderType;
 }
 
-export const postorders = async (auth: Authentication, order: postOrdersParams): Promise<postOrdersResult> => {
+export const postorders = async (auth: Authentication, order: Order): Promise<PostOrdersResult> => {
   const response = (await privateRequest('post', `account/orders`, auth, {}, order)).data;
 
   if (response.error && !!response.error.length) {
     throw new Error(response.error);
   }
 
-  return response as postOrdersResult;
+  return response as PostOrdersResult;
 };
