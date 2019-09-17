@@ -1,21 +1,21 @@
-import * as R from 'ramda';
+// import * as R from 'ramda';
 import * as Rx from 'rxjs';
 // import BigNumber from 'bignumber.js';
 import { OrderbookObserver, Symbol } from '@melonproject/ea-common';
 import { subscribe } from '../../api/websocket';
 import { share } from 'rxjs/operators';
 import { fromStandarPair } from '../mapping';
-import { SubscriptionParams, OrderBookMessage } from '../../api/types';
+import { SubscriptionParams } from '../../api/types';
 
 export interface WatchOptions {
   base: Symbol;
   quote: Symbol;
 }
 
-const isSnapshot = R.compose(
-  R.cond([[R.has('ORDER_BOOK_SNAPSHOT'), R.T], [R.has('bs'), R.T], [R.T, R.F]]),
-  R.nth(1),
-) as (payload: [string, BookMessage]) => payload is [string, BookSnapshotMessage];
+// const isSnapshot = R.compose(
+//   R.cond([[R.has('ORDER_BOOK_SNAPSHOT'), R.T], [R.has('bs'), R.T], [R.T, R.F]]),
+//   R.nth(1),
+// ) as (payload: [string, BookMessage]) => payload is [string, BookSnapshotMessage];
 
 // const isUpdate = R.compose(
 //   R.cond([[R.has('a'), R.T], [R.has('b'), R.T], [R.T, R.F]]),
