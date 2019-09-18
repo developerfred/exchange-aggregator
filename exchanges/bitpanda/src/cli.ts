@@ -126,7 +126,7 @@ export default (program: typeof commander, args: string[]) => {
 
   /* ABSTRACT */
   program
-    .command('orderbook')
+    .command('orderbook <base> <quote>')
     .option('--depth [depth]', 'The depth of the orderbook.', 5)
     .option('--watch [watch]', 'Watch or fetch the orderbook.', false)
     .option('--level [level]', 'Type of orderbook (fetch).', '3')
