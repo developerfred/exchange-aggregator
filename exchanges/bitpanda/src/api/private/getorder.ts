@@ -1,6 +1,6 @@
 import { privateRequest } from '../common';
 import { Authentication, OrderResponse } from '../types';
-
+// TODO: TO TEST
 export const getorder = async (auth: Authentication, order_id: string): Promise<OrderResponse> => {
   const response = (await privateRequest('get', `account/orders/${order_id}`, auth)).data;
 

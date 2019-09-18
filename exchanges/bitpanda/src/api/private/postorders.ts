@@ -1,6 +1,6 @@
 import { privateRequest } from '../common';
 import { Authentication } from '../types';
-
+// TODO: TO TEST
 export type OrderType = 'LIMIT' | 'MARKET' | 'STOP';
 export type OrderSide = 'SELL' | 'BUY';
 

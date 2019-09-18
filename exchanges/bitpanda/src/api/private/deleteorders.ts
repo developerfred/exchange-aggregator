@@ -1,6 +1,6 @@
 import { privateRequest } from '../common';
 import { Authentication } from '../types';
-
+// TODO: TO TEST
 export const deleteorders = async (auth: Authentication): Promise<string[]> => {
   const response = (await privateRequest('delete', `account/orders`, auth)).data;
 

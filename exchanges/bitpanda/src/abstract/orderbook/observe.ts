@@ -1,98 +1,83 @@
-// import * as R from 'ramda';
+import * as R from 'ramda';
 import * as Rx from 'rxjs';
-// import BigNumber from 'bignumber.js';
-import { OrderbookObserver, Symbol } from '@melonproject/ea-common';
+import BigNumber from 'bignumber.js';
+import { OrderbookObserver, Symbol, Orderbook } from '@melonproject/ea-common';
 import { subscribe } from '../../api/websocket';
-import { share } from 'rxjs/operators';
+import { share, filter, map } from 'rxjs/operators';
 import { fromStandarPair } from '../mapping';
-import { SubscriptionParams } from '../../api/types';
+import {
+  SubscriptionParams,
+  OrderBookMessage,
+  OrderBookSnapshotMessage,
+  OrderBookUpdateMessage,
+} from '../../api/types';
 
 export interface WatchOptions {
   base: Symbol;
   quote: Symbol;
 }
 
-// const isSnapshot = R.compose(
-//   R.cond([[R.has('ORDER_BOOK_SNAPSHOT'), R.T], [R.has('bs'), R.T], [R.T, R.F]]),
-//   R.nth(1),
-// ) as (payload: [string, BookMessage]) => payload is [string, BookSnapshotMessage];
+const update = (
+  subscriber: Rx.Subscriber<Orderbook<Symbol>>,
+  // depth: number,
+  state: (message: Orderbook<Symbol>) => Orderbook<Symbol>,
+) => (message: Orderbook<Symbol>) => {
+  const current = state(message);
 
-// const isUpdate = R.compose(
-//   R.cond([[R.has('a'), R.T], [R.has('b'), R.T], [R.T, R.F]]),
-//   R.nth(1),
-// ) as (payload: [string, BookMessage]) => payload is [string, BookUpdateMessage];
+  current.asks = message.asks
+    .reduce((carry, current) => {
+      // Temporarily remove the updated price level from the state.
+      const out = carry.filter(item => !item.price.isEqualTo(current.price));
+      // Only (re-)add the price level if it's not zero.
+      return current.volume.isZero() ? out : out.concat(current);
+    }, current.asks)
+    .sort((a, b) => a.price.comparedTo(b.price));
+  // .slice(0, 5);
 
-// const update = (
-//   subscriber: Rx.Subscriber<Orderbook<Symbol>>,
-//   depth: number,
-//   state: (message: Orderbook<Symbol>) => Orderbook<Symbol>,
-// ) => (message: Orderbook<Symbol>) => {
-//   const current = state(message);
+  current.bids = message.bids
+    .reduce((carry, current) => {
+      // Temporarily remove the updated price level from the state.
+      const out = carry.filter(item => !item.price.isEqualTo(current.price));
+      // Only (re-)add the price level if it's not zero.
+      return current.volume.isZero() ? out : out.concat(current);
+    }, current.bids)
+    .sort((a, b) => b.price.comparedTo(a.price));
+  // .slice(0, 5);
 
-//   current.asks = message.asks
-//     .reduce((carry, current) => {
-//       // Temporarily remove the updated price level from the state.
-//       const out = carry.filter(item => !item.price.isEqualTo(current.price));
-//       // Only (re-)add the price level if it's not zero.
-//       return current.volume.isZero() ? out : out.concat(current);
-//     }, current.asks)
-//     .sort((a, b) => a.price.comparedTo(b.price))
-//     .slice(0, depth);
+  subscriber.next({
+    quote: current.quote,
+    base: current.base,
+    asks: current.asks.slice(),
+    bids: current.bids.slice(),
+  });
+};
 
-//   current.bids = message.bids
-//     .reduce((carry, current) => {
-//       // Temporarily remove the updated price level from the state.
-//       const out = carry.filter(item => !item.price.isEqualTo(current.price));
-//       // Only (re-)add the price level if it's not zero.
-//       return current.volume.isZero() ? out : out.concat(current);
-//     }, current.asks)
-//     .sort((a, b) => b.price.comparedTo(a.price))
-//     .slice(0, depth);
+const snapshot = (
+  subscriber: Rx.Subscriber<Orderbook<Symbol>>,
+  // depth: number,
+  state: (message: Orderbook<Symbol>) => Orderbook<Symbol>,
+) => (message: Orderbook<Symbol>) => {
+  const current = state(message);
 
-//   subscriber.next({
-//     quote: current.quote,
-//     base: current.base,
-//     asks: current.asks.slice(),
-//     bids: current.bids.slice(),
-//   });
-// };
+  current.asks = message.asks.sort((a, b) => a.price.comparedTo(b.price));
+  // .filter(item => !item.volume.isEqualTo(0))
+  // .slice(0, 5);
 
-// const snapshot = (
-//   subscriber: Rx.Subscriber<Orderbook<Symbol>>,
-//   depth: number,
-//   state: (message: Orderbook<Symbol>) => Orderbook<Symbol>,
-// ) => (message: Orderbook<Symbol>) => {
-//   const current = state(message);
+  current.bids = message.bids.sort((a, b) => b.price.comparedTo(a.price));
+  // .filter(item => !item.volume.isEqualTo(0))
+  // .slice(0, 5);
 
-//   current.asks = message.asks
-//     .sort((a, b) => a.price.comparedTo(b.price))
-//     .filter(item => !item.volume.isEqualTo(0))
-//     .slice(0, depth);
-
-//   current.bids = message.bids
-//     .sort((a, b) => b.price.comparedTo(a.price))
-//     .filter(item => !item.volume.isEqualTo(0))
-//     .slice(0, depth);
-
-//   subscriber.next({
-//     quote: current.quote,
-//     base: current.base,
-//     asks: current.asks.slice(),
-//     bids: current.bids.slice(),
-//   });
-// };
+  subscriber.next({
+    quote: current.quote,
+    base: current.base,
+    asks: current.asks.slice(),
+    bids: current.bids.slice(),
+  });
+};
 
 export const observe: OrderbookObserver<WatchOptions> = options =>
   new Rx.Observable(subscriber => {
     const pair = fromStandarPair(options);
-
-    // const state: Orderbook<Symbol> = {
-    //   base: options.base,
-    //   quote: options.quote,
-    //   asks: [],
-    //   bids: [],
-    // };
-
     const opts = {
       type: 'SUBSCRIBE',
       channels: [
@@ -103,50 +88,62 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
       ],
     } as SubscriptionParams;
 
-    const messages$ = subscribe(opts).pipe(share());
+    const messages$ = subscribe<OrderBookMessage>(opts).pipe(share());
 
-    // const updates$ = messages$.pipe(
-    //   filter(isUpdate),
-    //   map(([_, message]) => {
-    //     const asks = (message.a || []).map(([price, volume]) => ({
-    //       price: new BigNumber(price),
-    //       volume: new BigNumber(volume),
-    //     }));
+    const state: Orderbook<Symbol> = {
+      base: options.base,
+      quote: options.quote,
+      asks: [],
+      bids: [],
+    };
 
-    //     const bids = (message.b || []).map(([price, volume]) => ({
-    //       price: new BigNumber(price),
-    //       volume: new BigNumber(volume),
-    //     }));
+    const updates$ = messages$.pipe(
+      filter(value => R.equals(value.type, 'ORDER_BOOK_UPDATE')),
+      map(message => {
+        const update = message as OrderBookUpdateMessage;
 
-    //     return { asks, bids };
-    //   }),
-    // );
+        const asks = update.changes
+          .filter(value => R.equals(value[0], 'SELL'))
+          .map(value => ({
+            price: new BigNumber(value[1]),
+            volume: new BigNumber(value[2]),
+          }));
 
-    // const snapshots$ = messages$.pipe(
-    //   filter(isSnapshot),
-    //   map(([_, message]) => {
-    //     const asks = (message.as || []).map(([price, volume]) => ({
-    //       price: new BigNumber(price),
-    //       volume: new BigNumber(volume),
-    //     }));
+        const bids = update.changes
+          .filter(value => R.equals(value[0], 'BUY'))
+          .map(value => ({
+            price: new BigNumber(value[1]),
+            volume: new BigNumber(value[2]),
+          }));
 
-    //     const bids = (message.bs || []).map(([price, volume]) => ({
-    //       price: new BigNumber(price),
-    //       volume: new BigNumber(volume),
-    //     }));
+        return { asks, bids };
+      }),
+    );
 
-    //     return { asks, bids };
-    //   }),
-    // );
+    const snapshots$ = messages$.pipe(
+      filter(value => R.equals(value.type, 'ORDER_BOOK_SNAPSHOT')),
+      map(message => {
+        const snpashot = message as OrderBookSnapshotMessage;
 
-    // const updates = updates$.subscribe(update(subscriber, opts.depth, () => state));
-    // const snapshots = snapshots$.subscribe(snapshot(subscriber, opts.depth, () => state));
+        const asks = snpashot.asks.map(value => ({
+          price: new BigNumber(value[0]),
+          volume: new BigNumber(value[1]),
+        }));
 
-    const flux = messages$.subscribe(subscriber);
+        const bids = snpashot.bids.map(value => ({
+          price: new BigNumber(value[0]),
+          volume: new BigNumber(value[1]),
+        }));
+
+        return { asks, bids };
+      }),
+    );
+
+    const updates = updates$.subscribe(update(subscriber, () => state));
+    const snapshots = snapshots$.subscribe(snapshot(subscriber, () => state));
 
     return () => {
-      flux.unsubscribe();
-      //   updates.unsubscribe();
-      //   snapshots.unsubscribe();
+      updates.unsubscribe();
+      snapshots.unsubscribe();
     };
   });

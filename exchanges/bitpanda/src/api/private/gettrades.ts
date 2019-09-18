@@ -1,6 +1,6 @@
 import { privateRequest } from '../common';
 import { Authentication } from '../types';
-
+// TODO: TO TEST
 export interface GetTradesParams {
   from?: string;
   to?: string;
