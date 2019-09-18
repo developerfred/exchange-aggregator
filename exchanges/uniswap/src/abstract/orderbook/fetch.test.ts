@@ -1,15 +1,15 @@
 import { getUniswapRate } from '../../api/calls/getUniswapRate';
-import { observeOrderbook } from './index';
+import { fetch } from './fetch';
 import { Eth } from 'web3-eth';
-import { createEnvironment, addresses } from '../../index';
+import { createEnvironment } from '../../createEnvironment';
+import mainnet from '../../addresses/mainnet.json';
 import BigNumber from 'bignumber.js';
-import { Token, OrderbookUpdate } from '@melonproject/ea-common';
-import { take } from 'rxjs/operators';
+import { Token } from '@melonproject/ea-common';
 
-describe('observeOrderbook', () => {
+describe('fetch', () => {
   it('should produce the same values as a singular fetch', async () => {
     const eth = await new Eth(process.env.JSON_RPC_ENDPOINT);
-    const env = await createEnvironment({ eth, addresses });
+    const env = await createEnvironment({ eth, addresses: mainnet });
 
     const weth: Token = {
       address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
@@ -28,7 +28,7 @@ describe('observeOrderbook', () => {
       takerAsset: dgx,
       nativeAsset: weth,
       takerQuantity: new BigNumber(1),
-      targetExchange: '0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95',
+      targetExchange: mainnet.UniswapFactory,
     });
 
     const ethRateInDgx = await getUniswapRate(env, {
@@ -36,14 +36,10 @@ describe('observeOrderbook', () => {
       takerAsset: weth,
       nativeAsset: weth,
       takerQuantity: new BigNumber(1),
-      targetExchange: '0xc0a47dFe034B400B47bDaD5FecDa2621de6c4d95',
+      targetExchange: mainnet.UniswapFactory,
     });
 
-    const observer = observeOrderbook([{ base: dgx, quote: weth }], { environment: env });
-    const result: OrderbookUpdate = await new Promise((resolve, reject) => {
-      observer.pipe(take(1)).subscribe(resolve, reject);
-    });
-
+    const result = await fetch({ base: dgx, quote: weth, environment: env });
     expect(result.bids[0].price).toStrictEqual(dgxRate);
     expect(result.asks[0].price).toStrictEqual(new BigNumber(1).dividedBy(ethRateInDgx));
   });

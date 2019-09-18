@@ -1,32 +1,50 @@
 import * as Rx from 'rxjs';
 import commander from 'commander';
 import * as readline from 'readline';
-import { observe, fetch } from './abstract/orderbook';
+import { fetch } from './abstract/orderbook';
+import { createEnvironment } from './createEnvironment';
+import addresses from './addresses/mainnet.json';
+import { Eth } from 'web3-eth';
+import { Token } from '@melonproject/ea-common';
 
 // tslint:disable-next-line:variable-name
 const Table = require('cli-table');
 
 interface OrderbookOptions {
-  depth: string;
-  watch: boolean;
+  endpoint: string;
 }
+
+const weth: Token = {
+  address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+  decimals: 18,
+  symbol: 'WETH',
+};
+
+const dgx: Token = {
+  address: '0x4f3afec4e5a3f2a6a1a411def7d7dfe50ee057bf',
+  decimals: 9,
+  symbol: 'DGX',
+};
 
 // tslint:disable-next-line:no-default-export
 export default (program: typeof commander, args: string[]) => {
-  program
-    .command('orderbook <base> <quote>')
-    .option('--depth [depth]', 'The depth of the orderbook.', 10)
-    .option('--watch', 'The depth of the orderbook.', false)
-    .action(async (base: string, quote: string, options: OrderbookOptions) => {
+  const orderbook = program
+    // .command('orderbook <base> <quote>')
+    .command('orderbook')
+    .option('--endpoint <endpoint>', 'http://localhost:8545')
+    .action(async () => {
+      const options = (orderbook as any) as OrderbookOptions;
+      const eth = await new Eth(options.endpoint);
+      const env = await createEnvironment({ eth, addresses });
+
+      // TODO: Dynamic tokens.
       const opts = {
-        base,
-        quote,
-        depth: options.depth as any,
+        base: weth,
+        quote: dgx,
+        environment: env,
       };
 
-      const operator = options.watch ? observe(opts) : fetch(opts);
-
-      Rx.from(operator).subscribe({
+      Rx.from(fetch(opts)).subscribe({
         next: orderbook => {
           const data = new Table({
             head: ['TYPE', 'VOLUME', 'PRICE'],

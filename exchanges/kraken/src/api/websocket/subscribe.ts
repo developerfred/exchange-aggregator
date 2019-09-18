@@ -5,7 +5,7 @@ import { SubscriptionMessage, SubscriptionParams } from '../types';
 
 let counter = 0;
 export const subscribe = <T = SubscriptionMessage>(
-  pair: string[],
+  pair: string,
   subscription: SubscriptionParams,
 ): Rx.Observable<[string, T]> => {
   let channels: { [key: string]: string } = {};
@@ -13,15 +13,15 @@ export const subscribe = <T = SubscriptionMessage>(
 
   const subMsg = () => ({
     reqid,
-    pair,
     subscription,
+    pair: [pair],
     event: 'subscribe',
   });
 
   const unsubMsg = () => ({
     reqid,
-    pair,
     subscription,
+    pair: [pair],
     event: 'unsubscribe',
   });
 
