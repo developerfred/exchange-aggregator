@@ -78,7 +78,7 @@ export const socket = <T>(subscribe: () => SubscribeMessage) => {
 
   const socket$ = webSocket<AnyMessage<T>>({
     url: 'wss://api-pub.bitfinex.com/ws/2',
-    WebSocketCtor: WebSocket,
+    WebSocketCtor: WebSocket as any,
     closeObserver: close$,
     openObserver: open$,
   });

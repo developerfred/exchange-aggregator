@@ -37,24 +37,13 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
 
     const updates = updates$.subscribe((event: TradingPairBookEntry) => {
       const volume = event.count.isZero() ? event.count : event.amount.abs();
+      const value = {
+        price: event.price,
+        volume,
+      };
 
-      const bids = event.amount.isPositive()
-        ? [
-            {
-              price: event.price,
-              volume,
-            },
-          ]
-        : [];
-
-      const asks = event.amount.isNegative()
-        ? [
-            {
-              price: event.price,
-              volume,
-            },
-          ]
-        : [];
+      const bids = event.amount.isPositive() ? [value] : [];
+      const asks = event.amount.isNegative() ? [value] : [];
 
       state.asks = asks
         .reduce((carry, current) => {
@@ -72,7 +61,7 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
           const out = carry.filter(item => !item.price.isEqualTo(current.price));
           // Only (re-)add the price level if it's not zero.
           return current.volume.isZero() ? out : out.concat(current);
-        }, state.asks)
+        }, state.bids)
         .sort((a, b) => b.price.comparedTo(a.price))
         .slice(0, options.length);
 
