@@ -102,6 +102,57 @@ export interface GetOrdersResponse {
   max_page_size: number;
 }
 
+export interface CreateDepositCryptoResponse {
+  amount: string;
+  recipient: string;
+  destination_tag: null;
+  fee: string;
+}
+
+export interface GetDepositCryptoResponse {
+  address: string;
+  destinationTag: null;
+  enabled: boolean;
+  canCreateMore: boolean;
+  smartContract: boolean;
+}
+
+export interface GetDepositFiatResponse {
+  iban: string;
+  bic: string;
+  bank: string;
+  address: string;
+  receiver: string;
+  receiver_address: string;
+  unique_payment_number: string;
+}
+
+export interface WithdrawalCryptoParams {
+  currency: string;
+  amount: string;
+  recipient: {
+    address: string;
+    destination_tag: string;
+  };
+}
+
+export interface WithdrawalCryptoResponse {
+  amount: string;
+  recipient: string;
+  destination_tag: null;
+  fee: string;
+}
+
+export interface WithdrawalFiatParams {
+  payout_account_id: string;
+  currency: string;
+  amount: string;
+}
+
+export interface WithdrawalFiatResponse {
+  transaction_id: string;
+}
+
 /* WEBSOCKET PARAMS */
 export interface SubscriptionParams {
   type: 'SUBSCRIBE';

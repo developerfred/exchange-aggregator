@@ -83,6 +83,7 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
       channels: [
         {
           name: 'ORDER_BOOK',
+          depth: 0, // full order book
           instrument_codes: [pair],
         },
       ],
