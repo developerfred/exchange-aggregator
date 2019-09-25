@@ -1,10 +1,8 @@
 import * as Rx from 'rxjs';
+import Ws from 'isomorphic-ws';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import * as debug from '../../debug';
 import { AnyMessage } from '../types';
-
-// tslint:disable-next-line:variable-name
-const Ws = require('isomorphic-ws');
 
 let socket$: WebSocketSubject<AnyMessage>;
 export const connect = () => {
@@ -14,7 +12,7 @@ export const connect = () => {
 
     socket$ = webSocket({
       url: 'wss://ws.kraken.com',
-      WebSocketCtor: Ws,
+      WebSocketCtor: Ws as any,
       closeObserver: close$,
       openObserver: open$,
     });
