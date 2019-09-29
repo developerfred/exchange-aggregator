@@ -7,7 +7,7 @@ import BigNumber from 'bignumber.js';
 import { Token } from '@melonproject/ea-common';
 
 describe('fetch', () => {
-  it('should produce the same values as a singular fetch', async () => {
+  xit('should produce the same values as a singular fetch', async () => {
     const eth = await new Eth(process.env.JSON_RPC_ENDPOINT);
     const env = await createEnvironment({ eth, addresses: mainnet });
 
