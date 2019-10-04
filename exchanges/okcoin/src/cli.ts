@@ -33,10 +33,6 @@ import {
   openorders,
 } from './api';
 
-const passphrase = 'WoortonInDaPlace';
-const key = '0b17c596-9da9-4b1c-ae70-ee178bee6f38';
-const secret = '61F00EBD8151B3C9539CB19D49F85705';
-
 // tslint:disable-next-line:variable-name
 // const Table = require('cli-table');
 
