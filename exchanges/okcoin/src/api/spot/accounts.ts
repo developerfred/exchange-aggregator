@@ -1,7 +1,7 @@
-import { Authentication, CallLimit } from '../types';
+import { Authentication, CallLimit, AccountsResponse } from '../types';
 import { apiRequest } from '../common';
 
-export const accounts = async (auth: Authentication): Promise<any> => {
+export const accounts = async (auth: Authentication): Promise<AccountsResponse[]> => {
   const limit = {
     limit: 20,
     frequency: 2,
@@ -10,11 +10,9 @@ export const accounts = async (auth: Authentication): Promise<any> => {
 
   const response = (await apiRequest(auth, limit, 'get', `/api/spot/v3/accounts`)).data;
 
-  console.log('test');
+  if (response.error && !!response.error.length) {
+    throw new Error(response.error);
+  }
 
-  // if (response.error && !!response.error.length) {
-  //     throw new Error(response.error);
-  // }
-
-  return response as any;
+  return response as AccountsResponse[];
 };

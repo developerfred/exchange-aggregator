@@ -13,10 +13,15 @@ const prefix = 'https://www.okcoin.com';
 //   '500': 'Internal Server Error — We had a problem with our server',
 // };
 
-const signature = (auth: Authentication, timestamp: string, method: string, requestedPath: string, data?: string) => {
-  const preHash = `${timestamp}${method.toUpperCase()}${requestedPath}${data || ''}`;
+const signature = (auth: Authentication, timestamp: string, method: string, path: string, data?: any) => {
+  const preHash = `${timestamp}${method.toUpperCase()}${path}${data ? JSON.stringify(data) : ''}`;
+  // console.log(preHash)
   const hmac = crypto.createHmac('sha256', auth.secret);
-  const signature = hmac.update(preHash, 'utf8').digest('base64');
+  const signature = hmac
+    .update(preHash)
+    .digest()
+    .toString('base64');
+
   return signature;
 };
 
@@ -28,26 +33,26 @@ export const apiRequest = async (
   params?: any,
   data?: any,
 ) => {
-  const requestedPath = params ? `${endpoint}${JSON.stringify(params)}` : `${endpoint}`;
-  const url = `${prefix}${requestedPath}`;
-  const timestamp = new Date().toISOString();
+  const path = params ? `${endpoint}?${new URLSearchParams(params).toString()}` : `${endpoint}`;
+  const url = `${prefix}${path}`;
+  const timestamp = `${Date.now() / 1000}`;
 
   const headers = {
     'Content-Type': 'application/json',
     'OK-ACCESS-KEY': auth.key,
     'OK-ACCESS-PASSPHRASE': auth.passphrase,
-    'OK-ACCESS-SIGN': signature(auth, timestamp, method, requestedPath, JSON.stringify(data)),
+    'OK-ACCESS-SIGN': signature(auth, timestamp, method, path, data),
     'OK-ACCESS-TIMESTAMP': timestamp,
   };
-  return request(method, url, headers, params, data);
+  return request(method, url, headers, {}, data);
 };
 
-export const request = async (method: string, url: string, headers: any = {}, params: any = {}, data: any = {}) => {
-  console.log(method);
-  console.log(url);
-  console.log(headers);
-  console.log(params);
-  console.log(data);
+export const request = async (method: string, url: string, headers: any = {}, params?: any, data?: any) => {
+  // console.log(method);
+  // console.log(url);
+  // console.log(headers);
+  // console.log(params);
+  // console.log(data);
 
   return axios({
     url: url,
@@ -62,25 +67,6 @@ export const request = async (method: string, url: string, headers: any = {}, pa
       throw error;
     })
     .then(value => {
-      console.log('return value');
-      console.log(value);
-      return value.data;
+      return value;
     });
-  // .finally()
-
-  // return response as AxiosResponse<any>
-
-  // try {
-  //   return axios({
-  //     url: url,
-  //     method: method as Method,
-  //     params: params,
-  //     data: data,
-  //     headers: headers,
-  //   });
-  // } catch (e) {
-  //   const error = new Error(`${e.response.data['message']} (${e.response.data['code']})`);
-  //   (error as any).original = e;
-  //   throw error;
-  // }
 };

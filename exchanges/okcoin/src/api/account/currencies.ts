@@ -1,7 +1,7 @@
-import { Authentication, CallLimit } from '../types';
+import { Authentication, CallLimit, CurrenciesResponse } from '../types';
 import { apiRequest } from '../common';
 
-export const currencies = async (auth: Authentication): Promise<any> => {
+export const currencies = async (auth: Authentication): Promise<CurrenciesResponse[]> => {
   const limit = {
     limit: 20,
     frequency: 2,
@@ -10,9 +10,9 @@ export const currencies = async (auth: Authentication): Promise<any> => {
 
   const response = (await apiRequest(auth, limit, 'get', `/api/account/v3/currencies`)).data;
 
-  // if (response.error && !!response.error.length) {
-  //     throw new Error(response.error);
-  // }
+  if (response.error && !!response.error.length) {
+    throw new Error(response.error);
+  }
 
-  return response as any;
+  return response as CurrenciesResponse[];
 };
