@@ -33,6 +33,10 @@ import {
   openorders,
 } from './api';
 
+const passphrase = '';
+const key = '';
+const secret = '';
+
 // tslint:disable-next-line:variable-name
 // const Table = require('cli-table');
 
