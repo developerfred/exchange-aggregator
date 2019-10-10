@@ -1,16 +1,17 @@
 {
   "name": "@melonproject/ea-cli",
-  "version": "1.0.0-alpha.0",
+  "version": "2.0.0",
   "description": "Command line interface for the exchange aggregator.",
   "bin": {
     "exchange-aggregator": "./bin/exchange-aggregator"
   },
-  "typings": "./lib/index.d.ts",
+  "typings": "./index.d.ts",
   "author": "Melonport AG <team@melonport.com>",
   "license": "GPL-3.0",
   "homepage": "https://github.com/melonproject/exchange-aggregator#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "lib"
   },
   "contributors": [
     "Sebastian Siemssen <fubhy@fubhy.com>"
@@ -27,10 +28,8 @@
     "exchange",
     "cli"
   ],
-  "files": [
-    "lib/"
-  ],
   "scripts": {
+    "postversion": "cp package.json lib",
     "prepare": "yarn build",
     "build": "rimraf lib && tsc --project .",
     "clean": "rimraf lib && rimraf coverage",
@@ -49,6 +48,7 @@
     "@types/jest": "^24.0.15",
     "@types/node": "^12.0.10",
     "@types/ramda": "^0.26.12",
+    "cp": "^0.2.0",
     "debug": "^4.0.1",
     "jest": "^24.8.0",
     "lint-staged": "^8.2.1",
@@ -67,5 +67,5 @@
     "commander": "^3.0.1",
     "rxjs": "^6.5.2"
   },
-  "gitHead": "f0dc50488031df6473634a28bb0d95a022a69353"
+  "gitHead": "ac86499af8e7dffa0108f2370663e387d1c900ab"
 }

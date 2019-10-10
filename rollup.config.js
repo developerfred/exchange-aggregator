@@ -18,23 +18,23 @@ export const globals = {
 };
 
 export default (name) => [
-	{
-		input: 'lib/index.js',
-		onwarn,
-		output: [
-			{
-				file: 'lib/bundle.umd.js',
-				format: 'umd',
-				name: `ea.${name}`,
-				sourcemap: true,
-				exports: 'named',
-				globals,
-			},
-		],
+  {
+    input: 'lib/index.js',
+    onwarn,
+    output: [
+      {
+        file: 'lib/bundle.umd.js',
+        format: 'umd',
+        name: `ea.${name}`,
+        sourcemap: true,
+        exports: 'named',
+        globals,
+      },
+    ],
     external: Object.keys(globals),
-		plugins: [
-			node({ module: true }),
-			sourcemaps(),
-		],
-	},
+    plugins: [
+      node(),
+      sourcemaps(),
+    ],
+  },
 ];

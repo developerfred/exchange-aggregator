@@ -1,15 +1,16 @@
 {
   "name": "@melonproject/ea-uniswap",
-  "version": "1.0.0-alpha.0",
+  "version": "2.0.0",
   "description": "Integration for the Uniswap API.",
-  "main": "./lib/index.js",
-  "module": "./lib/bundle.esm.js",
-  "typings": "./lib/index.d.ts",
+  "main": "./index.js",
+  "module": "./bundle.esm.js",
+  "typings": "./index.d.ts",
   "author": "Melonport AG <team@melonport.com>",
   "license": "GPL-3.0",
   "homepage": "https://github.com/melonproject/exchange-aggregator#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "lib"
   },
   "contributors": [
     "Gautham Nekkanti <gautham@melonport.com>",
@@ -27,12 +28,8 @@
     "exchange",
     "kyber"
   ],
-  "files": [
-    "lib/",
-    "abi/",
-    "addresses.json"
-  ],
   "scripts": {
+    "postversion": "cp package.json lib",
     "prepare": "yarn compile && yarn build",
     "build": "rimraf lib && tsc --project . && rollup --config && cp -R src/abi src/addresses lib/",
     "dev": "ts-node-dev --respawn --transpileOnly src/dev",
@@ -54,6 +51,7 @@
     "@types/jest": "^24.0.15",
     "@types/node": "^12.0.10",
     "@types/ramda": "^0.26.12",
+    "cp": "^0.2.0",
     "debug": "^4.0.1",
     "dotenv": "^8.1.0",
     "glob": "^7.1.4",
@@ -74,12 +72,13 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/ea-common": "^1.0.0-alpha.0",
+    "@melonproject/ea-common": "^2.0.0",
     "bignumber.js": "^9.0.0",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
     "web3-eth": "^2.0.0-alpha.1",
     "web3-eth-contract": "^2.0.0-alpha.1",
     "web3-utils": "^2.0.0-alpha.1"
-  }
+  },
+  "gitHead": "ac86499af8e7dffa0108f2370663e387d1c900ab"
 }
