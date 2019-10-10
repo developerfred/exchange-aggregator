@@ -5,12 +5,13 @@
   "bin": {
     "exchange-aggregator": "./bin/exchange-aggregator"
   },
-  "typings": "./lib/index.d.ts",
+  "typings": "./index.d.ts",
   "author": "Melonport AG <team@melonport.com>",
   "license": "GPL-3.0",
   "homepage": "https://github.com/melonproject/exchange-aggregator#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "lib"
   },
   "contributors": [
     "Sebastian Siemssen <fubhy@fubhy.com>"

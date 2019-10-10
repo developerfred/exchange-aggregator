@@ -6,21 +6,21 @@
     "exchanges/*"
   ],
   "scripts": {
-    "postinstall": "lerna exec -- yarn && lerna run prepare",
+    "postinstall": "lerna link --force-local --contents lib && lerna exec -- yarn && lerna run prepare",
     "clean": "lerna run clean",
     "build": "lerna run build",
     "test": "lerna run test",
     "lint": "lerna run lint",
     "format": "lerna run format",
-    "type-check": "lerna run typecheck",
+    "typecheck": "lerna run typecheck",
     "predeploy": "yarn && yarn clean && yarn build && yarn lint && yarn test",
     "deploy": "lerna publish -m \"chore: Publish\"",
     "deploy:next": "yarn deploy --canary --preid next",
-    "watch": "trap \"kill 0\" SIGINT; for f in `ls exchanges`; do (cd `pwd`/exchanges/$f && yarn run watch) & done; "
+    "watch": "trap \"kill 0\" SIGINT; for f in `ls exchanges`; do (cd `pwd`/exchanges/$f && yarn run watch) & done;"
   },
   "devDependencies": {
     "husky": "^2.7.0",
-    "lerna": "^3.15.0",
+    "lerna": "^3.17.0",
     "lint-staged": "^8.1.5"
   },
   "husky": {

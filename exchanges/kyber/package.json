@@ -2,14 +2,15 @@
   "name": "@melonproject/ea-kyber",
   "version": "1.0.0-alpha.0",
   "description": "Integration for the Kyber API.",
-  "main": "./lib/index.js",
-  "module": "./lib/bundle.esm.js",
-  "typings": "./lib/index.d.ts",
+  "main": "./index.js",
+  "module": "./bundle.esm.js",
+  "typings": "./index.d.ts",
   "author": "Melonport AG <team@melonport.com>",
   "license": "GPL-3.0",
   "homepage": "https://github.com/melonproject/exchange-aggregator#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "lib"
   },
   "contributors": [
     "Sebastian Siemssen <fubhy@fubhy.com>"

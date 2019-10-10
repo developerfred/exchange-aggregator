@@ -47,7 +47,7 @@ const update = (
       const out = carry.filter(item => !item.price.isEqualTo(current.price));
       // Only (re-)add the price level if it's not zero.
       return current.volume.isZero() ? out : out.concat(current);
-    }, current.asks)
+    }, current.bids)
     .sort((a, b) => b.price.comparedTo(a.price))
     .slice(0, depth);
 
