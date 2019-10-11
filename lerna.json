@@ -6,6 +6,6 @@
     "cli",
     "exchanges/*"
   ],
-  "version": "independent",
+  "version": "2.0.0",
   "hoist": false
 }
