@@ -32,6 +32,7 @@
     "lib/"
   ],
   "scripts": {
+    "postversion": "cp package.json lib",
     "prepare": "yarn build",
     "build": "rimraf lib && tsc --project .",
     "clean": "rimraf lib && rimraf coverage",
@@ -50,6 +51,7 @@
     "@types/jest": "^24.0.15",
     "@types/node": "^12.0.10",
     "@types/ramda": "^0.26.12",
+    "cp": "^0.2.0",
     "debug": "^4.0.1",
     "jest": "^24.8.0",
     "lint-staged": "^8.2.1",
@@ -68,5 +70,5 @@
     "commander": "^3.0.1",
     "rxjs": "^6.5.2"
   },
-  "gitHead": "f0dc50488031df6473634a28bb0d95a022a69353"
+  "gitHead": "ac86499af8e7dffa0108f2370663e387d1c900ab"
 }

@@ -32,6 +32,7 @@
     "lib/"
   ],
   "scripts": {
+    "postversion": "cp package.json lib",
     "prepare": "yarn build",
     "build": "rimraf lib && tsc --project . && rollup -c",
     "dev": "ts-node-dev --respawn --transpileOnly src/dev",
@@ -54,6 +55,7 @@
     "@types/ramda": "^0.26.12",
     "@types/ws": "^6.0.3",
     "commander": "^3.0.1",
+    "cp": "^0.2.0",
     "debug": "^4.0.1",
     "husky": "^2.7.0",
     "jest": "^24.8.0",
@@ -81,5 +83,5 @@
     "rxjs": "^6.5.2",
     "rxjs-websockets": "^7.0.0"
   },
-  "gitHead": "f0dc50488031df6473634a28bb0d95a022a69353"
+  "gitHead": "ac86499af8e7dffa0108f2370663e387d1c900ab"
 }
