@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-bitfinex",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Integration for the Bitfinex API.",
   "main": "./index.js",
   "module": "./bundle.esm.js",
@@ -34,7 +34,7 @@
     "build": "rimraf lib && tsc --project . && rollup -c",
     "dev": "ts-node-dev --respawn --transpileOnly src/dev",
     "clean": "rimraf lib && rimraf coverage",
-    "watch": "rimraf lib && tsc --watch --project . & rollup -c --watch",
+    "watch": "rimraf lib && tsc --watch --project . & rollup --config --watch",
     "typecheck": "tsc --project . --noEmit",
     "format": "prettier --write src/{*,**/*}.ts",
     "lint:prettier": "yarn prettier --list-different src/{*,**/*}.ts",
@@ -72,7 +72,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/ea-common": "^2.0.0",
+    "@melonproject/ea-common": "^2.0.1",
     "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
     "isomorphic-ws": "^4.0.1",
