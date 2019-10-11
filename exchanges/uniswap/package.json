@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-uniswap",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.1-alpha.0",
   "description": "Integration for the Uniswap API.",
   "main": "./index.js",
   "module": "./bundle.esm.js",
@@ -75,7 +75,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/ea-common": "^1.0.0-alpha.0",
+    "@melonproject/ea-common": "^1.0.1-alpha.0",
     "bignumber.js": "^9.0.0",
     "ramda": "^0.26.1",
     "rxjs": "^6.5.2",
