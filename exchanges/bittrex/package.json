@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-bittrex",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Integration for the Bittrex API.",
   "main": "./index.js",
   "module": "./bundle.esm.js",
@@ -70,7 +70,7 @@
     "typescript": "^3.1.1"
   },
   "dependencies": {
-    "@melonproject/ea-common": "^2.0.1",
+    "@melonproject/ea-common": "^2.0.2",
     "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
     "qs": "^6.7.0",

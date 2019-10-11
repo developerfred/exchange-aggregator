@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-common",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Common functionality for the exchange aggregator packages.",
   "main": "./index.js",
   "module": "./bundle.esm.js",
