@@ -30,6 +30,7 @@
   ],
   "scripts": {
     "postversion": "cp package.json lib",
+    "postbuild": "cp package.json lib",
     "prepare": "yarn build",
     "build": "rimraf lib && tsc --project . && rollup -c",
     "dev": "ts-node-dev --respawn --transpileOnly src/dev",
@@ -80,5 +81,5 @@
     "rxjs": "^6.5.2",
     "rxjs-websockets": "^7.0.0"
   },
-  "gitHead": "ac86499af8e7dffa0108f2370663e387d1c900ab"
+  "gitHead": "89d5931e6619257eedaecac42fa0a14469e68770"
 }
