@@ -1,9 +1,9 @@
 import * as R from 'ramda';
 import * as Rx from 'rxjs';
 import BigNumber from 'bignumber.js';
-import { OrderbookObserver, Orderbook, Symbol } from '@melonproject/ea-common';
+import { filter, map, share, switchMap, retryWhen, tap, delay } from 'rxjs/operators';
+import { OrderbookObserver, Orderbook, Symbol, OrderbookEntry } from '@melonproject/ea-common';
 import { subscribe } from '../../api/websocket';
-import { filter, map, share } from 'rxjs/operators';
 import { fromStandarPair } from '../mapping';
 import { BookUpdateMessage, BookMessage, SubscriptionParams, BookSnapshotMessage } from '../../api/types';
 
@@ -24,72 +24,87 @@ const isUpdate = R.compose(
   R.nth(1),
 ) as (payload: [string, BookMessage]) => payload is [string, BookUpdateMessage];
 
-const update = (
-  subscriber: Rx.Subscriber<Orderbook<Symbol>>,
-  depth: number,
-  state: (message: Orderbook<Symbol>) => Orderbook<Symbol>,
-) => (message: Orderbook<Symbol>) => {
-  const current = state(message);
+interface UpdateOrderbookEntry extends OrderbookEntry {
+  republish: boolean;
+}
 
-  current.asks = message.asks
-    .reduce((carry, current) => {
+interface UpdateMessage {
+  asks: UpdateOrderbookEntry[];
+  bids: UpdateOrderbookEntry[];
+}
+
+const update = (depth: number, state: Orderbook<Symbol>) => (message: UpdateMessage) => {
+  state.asks = message.asks
+    .reduce((carry, ask) => {
+      // Check for invalid deletes (deletes of price levels that were not in the orderbook).
+      if (ask.volume.isZero() && !carry.find(item => item.price.isEqualTo(ask.price))) {
+        throw new IncosistencyError();
+      }
+
+      // Check for invalid republishes (republishes of price levels that were already in the orderbook).
+      if (ask.republish && carry.find(item => item.price.isEqualTo(ask.price))) {
+        throw new IncosistencyError();
+      }
+
       // Temporarily remove the updated price level from the state.
-      const out = carry.filter(item => !item.price.isEqualTo(current.price));
+      const out = carry.filter(item => !item.price.isEqualTo(ask.price));
       // Only (re-)add the price level if it's not zero.
-      return current.volume.isZero() ? out : out.concat(current);
-    }, current.asks)
+      return ask.volume.isZero() ? out : out.concat({ price: ask.price, volume: ask.volume });
+    }, state.asks)
     .sort((a, b) => a.price.comparedTo(b.price))
     .slice(0, depth);
 
-  current.bids = message.bids
-    .reduce((carry, current) => {
+  state.bids = message.bids
+    .reduce((carry, bid) => {
+      // Check for invalid deletes (deletes of price levels that were not in the orderbook).
+      if (bid.volume.isZero() && !carry.find(item => item.price.isEqualTo(bid.price))) {
+        throw new IncosistencyError();
+      }
+
+      // Check for invalid republishes (republishes of price levels that were already in the orderbook).
+      if (bid.republish && carry.find(item => item.price.isEqualTo(bid.price))) {
+        throw new IncosistencyError();
+      }
+
       // Temporarily remove the updated price level from the state.
-      const out = carry.filter(item => !item.price.isEqualTo(current.price));
+      const out = carry.filter(item => !item.price.isEqualTo(bid.price));
       // Only (re-)add the price level if it's not zero.
-      return current.volume.isZero() ? out : out.concat(current);
-    }, current.bids)
+      return bid.volume.isZero() ? out : out.concat({ price: bid.price, volume: bid.volume });
+    }, state.bids)
     .sort((a, b) => b.price.comparedTo(a.price))
     .slice(0, depth);
 
-  subscriber.next({
-    quote: current.quote,
-    base: current.base,
-    asks: current.asks.slice(),
-    bids: current.bids.slice(),
-  });
+  return state;
 };
 
-const snapshot = (
-  subscriber: Rx.Subscriber<Orderbook<Symbol>>,
-  depth: number,
-  state: (message: Orderbook<Symbol>) => Orderbook<Symbol>,
-) => (message: Orderbook<Symbol>) => {
-  const current = state(message);
+interface SnapshotMessage {
+  asks: OrderbookEntry[];
+  bids: OrderbookEntry[];
+}
 
-  current.asks = message.asks
+const snapshot = (depth: number, state: Orderbook<Symbol>) => (message: SnapshotMessage) => {
+  state.asks = message.asks
     .sort((a, b) => a.price.comparedTo(b.price))
     .filter(item => !item.volume.isEqualTo(0))
     .slice(0, depth);
 
-  current.bids = message.bids
+  state.bids = message.bids
     .sort((a, b) => b.price.comparedTo(a.price))
     .filter(item => !item.volume.isEqualTo(0))
     .slice(0, depth);
 
-  subscriber.next({
-    quote: current.quote,
-    base: current.base,
-    asks: current.asks.slice(),
-    bids: current.bids.slice(),
-  });
+  return state;
 };
 
 const defaults = {
   depth: 10,
 };
 
-export const observe: OrderbookObserver<WatchOptions> = options =>
-  new Rx.Observable(subscriber => {
+// Custom error class for data inconsistencies in the websocket.
+class IncosistencyError extends Error {}
+
+export const observe: OrderbookObserver<WatchOptions> = options => {
+  const observable$ = new Rx.Observable<Orderbook<Symbol>>(subscriber => {
     const pair = fromStandarPair(options);
     const state: Orderbook<Symbol> = {
       base: options.base,
@@ -115,18 +130,21 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
     const updates$ = messages$.pipe(
       filter(isUpdate),
       map(([_, message]) => {
-        const asks = (message.a || []).map(([price, volume]) => ({
+        const asks = (message.a || []).map(([price, volume, _, republish]) => ({
           price: new BigNumber(price),
           volume: new BigNumber(volume),
+          republish: !!republish,
         }));
 
-        const bids = (message.b || []).map(([price, volume]) => ({
+        const bids = (message.b || []).map(([price, volume, _, republish]) => ({
           price: new BigNumber(price),
           volume: new BigNumber(volume),
+          republish: !!republish,
         }));
 
         return { asks, bids };
       }),
+      map(update(opts.depth, state)),
     );
 
     const snapshots$ = messages$.pipe(
@@ -144,13 +162,26 @@ export const observe: OrderbookObserver<WatchOptions> = options =>
 
         return { asks, bids };
       }),
+      map(snapshot(opts.depth, state)),
     );
 
-    const updates = updates$.subscribe(update(subscriber, opts.depth, () => state));
-    const snapshots = snapshots$.subscribe(snapshot(subscriber, opts.depth, () => state));
-
-    return () => {
-      updates.unsubscribe();
-      snapshots.unsubscribe();
-    };
+    return Rx.merge(snapshots$, updates$).subscribe(subscriber);
   });
+
+  return observable$.pipe(
+    retryWhen(errors =>
+      errors.pipe(
+        switchMap(error => {
+          if (error instanceof IncosistencyError) {
+            return Rx.of([]).pipe(
+              tap(() => console.error('Data inconsistency. Retrying.')),
+              delay(1000),
+            );
+          }
+
+          return Rx.throwError(error);
+        }),
+      ),
+    ),
+  );
+};

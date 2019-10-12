@@ -11,7 +11,7 @@ const defaults = {
   length: 25,
 };
 
-interface WatchOptions {
+export interface WatchOptions {
   length?: SubscriptionOptionsWithoutSymbol['length'];
   base: Symbol;
   quote: Symbol;

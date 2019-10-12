@@ -195,7 +195,7 @@ export type TradeMessage = [string, string, string, SellOrBuyAbbreviated, Market
 
 export type SpreadMessage = [string, string, string];
 
-export type BookItem = [string, string, string];
+export type BookItem = [string, string, string, 'r'?];
 
 export interface BookSnapshotMessage {
   as?: BookItem[];
