@@ -17,10 +17,6 @@ export const sendTransaction = async (
   options?: SendOptions,
   args?: any[],
 ): Promise<TransactionReceipt> => {
-  if (typeof config.contract === 'string' && !config.address) {
-    throw new Error('Missing address for contract creation.');
-  }
-
   // const name = typeof config.contract === 'string' ? config.contract : (config.contract as Contract).address;
   // console.log('');
   // console.log(`Calling ${config.method}() on ${name}`);
