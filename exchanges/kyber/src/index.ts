@@ -1,8 +1,25 @@
-import mainnet from './addresses/mainnet.json';
-import * as api from './api';
+import { Eth } from 'web3-eth';
 import * as abstract from './abstract';
 
-const addresses = { mainnet };
+export { abstract };
 
-export { createEnvironment } from './createEnvironment';
-export { api, abstract, addresses };
+export interface Environment {
+  client: Eth;
+  deployment: Deployment;
+  account?: string;
+}
+
+export interface Deployment {
+  KyberNetworkProxy: string;
+  KyberNetwork: string;
+  PermissionlessOrderbookReserveLister: string;
+  KyberReserve: string;
+  OrderbookReserve: string;
+  ConversionRates: string;
+  LiquidityConversionRates: string;
+  ExpectedRate: string;
+  FeeBurner: string;
+  SanityRates: string;
+  WhiteList: string;
+  KyberNetworkENSResolver: string;
+}

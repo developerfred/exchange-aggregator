@@ -1,0 +1,97 @@
+[
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "reserve",
+        "type": "address"
+      },
+      {
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "removeReserve",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "feeBurnerContract",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "reserve",
+        "type": "address"
+      },
+      {
+        "name": "isPermissionless",
+        "type": "bool"
+      }
+    ],
+    "name": "addReserve",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "reserve",
+        "type": "address"
+      },
+      {
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "name": "ethToToken",
+        "type": "bool"
+      },
+      {
+        "name": "tokenToEth",
+        "type": "bool"
+      },
+      {
+        "name": "add",
+        "type": "bool"
+      }
+    ],
+    "name": "listPairForReserve",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

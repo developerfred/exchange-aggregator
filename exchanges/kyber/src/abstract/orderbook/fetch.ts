@@ -1,7 +1,7 @@
-import { OrderbookEntry, Token, OrderbookFetcher } from '@melonproject/ea-common';
-import { getExpectedRate } from '../../api/calls/getExpectedRate';
-import { Environment } from '../../types';
 import BigNumber from 'bignumber.js';
+import { OrderbookEntry, Token, OrderbookFetcher } from '@melonproject/ea-common';
+import { getExpectedRate } from '../../methods/KyberNetworkProxy/getExpectedRate';
+import { Environment } from '../..';
 
 export interface FetchOptions {
   quantities?: BigNumber[];
@@ -15,15 +15,11 @@ const defaults = {
 };
 
 export const fetch: OrderbookFetcher<FetchOptions, Token> = async options => {
-  const quantities = options.quantities || defaults.quantities;
+  const quantities: BigNumber[] = options.quantities || defaults.quantities;
 
   const asksPromise = Promise.all(
     quantities.map(async qty => {
-      const result = await getExpectedRate(options.environment, {
-        srcToken: options.base.address,
-        destToken: options.quote.address,
-        srcQty: qty.toString(),
-      });
+      const result = await getExpectedRate(options.environment, options.base.address, options.quote.address, qty);
 
       return {
         price: result.expectedRate,
@@ -34,11 +30,7 @@ export const fetch: OrderbookFetcher<FetchOptions, Token> = async options => {
 
   const bidsPromises = Promise.all(
     quantities.map(async qty => {
-      const result = await getExpectedRate(options.environment, {
-        srcToken: options.quote.address,
-        destToken: options.base.address,
-        srcQty: qty.toString(),
-      });
+      const result = await getExpectedRate(options.environment, options.base.address, options.quote.address, qty);
 
       return {
         price: new BigNumber(1).dividedBy(result.expectedRate),
