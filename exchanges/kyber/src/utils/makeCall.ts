@@ -10,10 +10,6 @@ export interface CallConfig {
 }
 
 export const makeCall = async <T>(environment: Environment, config: CallConfig, args?: any[]): Promise<T> => {
-  if (typeof config.contract === 'string' && !config.address) {
-    throw new Error('Missing address for contract creation.');
-  }
-
   const contract = config.contract;
   const address = config.address;
   const method = config.method;

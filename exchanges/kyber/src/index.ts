@@ -21,5 +21,4 @@ export interface Deployment {
   FeeBurner: string;
   SanityRates: string;
   WhiteList: string;
-  KyberNetworkENSResolver: string;
 }

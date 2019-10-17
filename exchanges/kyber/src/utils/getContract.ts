@@ -9,20 +9,21 @@ const contractAddress = (environment: Environment, name: string) => {
   throw new Error(`Missing address for ${name} in deployment.`);
 };
 
-const loadContract = (environment: Environment, name: string, address?: string) => {
+const loadContract = (environment: Environment, name: string, address: string) => {
   try {
     const abi = require(`../contracts/${name}.abi.json`);
-    return new environment.client.Contract(abi, address || contractAddress(environment, name));
+    return new environment.client.Contract(abi, address);
   } catch (e) {
     throw new Error(`Failed to load contract ${name}: ${e.toString()}`);
   }
 };
 
 const contracts = new Map<string, Contract>();
-export const getContract = (environment: Environment, name: string, address: string) => {
-  const key = `${name}:${address}`;
+export const getContract = (environment: Environment, name: string, address?: string) => {
+  const resolvedAddress = address || contractAddress(environment, name);
+  const key = `${name}:${resolvedAddress}`;
   if (!contracts.has(key)) {
-    contracts.set(key, loadContract(environment, name, address));
+    contracts.set(key, loadContract(environment, name, resolvedAddress));
   }
 
   return contracts.get(key);
