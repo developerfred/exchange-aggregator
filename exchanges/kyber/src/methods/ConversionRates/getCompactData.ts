@@ -19,9 +19,9 @@ export const getCompactData = async (environment: Environment, token: string) =>
   );
 
   const arrayIndex = new BigNumber(result[0].toString());
-  const fieldOffset = new BigNumber(result[0].toString());
+  const fieldOffset = new BigNumber(result[1].toString());
   const buy = new BigNumber(toBN(result[2]).toString());
-  const sell = new BigNumber(toBN(result[2]).toString());
+  const sell = new BigNumber(toBN(result[3]).toString());
 
   return {
     arrayIndex,
