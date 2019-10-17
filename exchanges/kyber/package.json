@@ -30,7 +30,7 @@
   "scripts": {
     "postversion": "cp package.json lib",
     "postbuild": "cp package.json lib",
-    "prepare": "yarn compile && yarn build",
+    "prepare": "yarn build",
     "build": "rimraf lib && tsc --project . && rollup --config",
     "dev": "ts-node-dev --respawn --transpileOnly src/dev",
     "compile": "node scripts/compile && node scripts/exports",
