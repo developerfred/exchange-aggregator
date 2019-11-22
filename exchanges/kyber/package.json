@@ -1,6 +1,6 @@
 {
   "name": "@melonproject/ea-kyber",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "Integration for the Kyber API.",
   "main": "./index.js",
   "module": "./bundle.esm.js",
